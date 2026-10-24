@@ -1,18 +1,16 @@
 # OmicLearningHub
 
-Static learning hub for bioinformatics pipelines, served with GitHub Pages.
+### 🌐 **[Open the website → githubrudramani.github.io/OmicLearningHub](https://githubrudramani.github.io/OmicLearningHub/)**
 
-| Page | Module |
-|---|---|
-| `index.html` | Home |
-| `xenium.html` | Module 1 – Xenium spatial transcriptomics (Seurat, Harmony, Banksy) |
-| `rnaseq.html` | Module 2 – Bulk RNA-seq with limma-voom and TMM |
-| `scrnaseq.html` | Module 3 – scRNA-seq with LogNormalize, Harmony, ScType/SingleR |
+Hands-on bioinformatics learning hub. Each module explains how the technology developed, compares the main platforms, explains the key method with an interactive demo, and walks through a complete analysis with code you can copy on public data.
 
-## Deploy
-1. Push this folder to a GitHub repository (branch `main`).
-2. In the repo: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-3. The workflow in `.github/workflows/pages.yml` publishes the site to
-   `https://<your-username>.github.io/<repo-name>/`.
+| Module | Topic | Open |
+|---|---|---|
+| 1 · Spatial | Xenium spatial transcriptomics: platform comparison, Seurat, Harmony, Banksy, niches | [xenium.html](https://githubrudramani.github.io/OmicLearningHub/xenium.html) |
+| 2 · Bulk RNA-seq | limma-voom with TMM normalisation on GSE63310 | [rnaseq.html](https://githubrudramani.github.io/OmicLearningHub/rnaseq.html) |
+| 3 · Single-cell | scRNA-seq with LogNormalize, Harmony integration, ScType + SingleR annotation | [scrnaseq.html](https://githubrudramani.github.io/OmicLearningHub/scrnaseq.html) |
 
-No build step is needed: plain HTML, CSS and JavaScript.
+Coming next: Visium HD · DNA-seq / WGS · ATAC-seq
+
+## How the site is built
+Plain HTML, CSS and JavaScript with no build step. Every push to `main` is published by the GitHub Actions workflow in `.github/workflows/pages.yml`.
