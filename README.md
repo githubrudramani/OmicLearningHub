@@ -1,4 +1,4 @@
-# OmicsRun Learn
+# OmicLearningHub
 
 Static learning hub for bioinformatics pipelines, served with GitHub Pages.
 
