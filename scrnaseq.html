@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Single-Cell Learning Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: shared lab-notebook system — sticky nav, UMAP hero, history timeline → platforms → Harmony explainer → numbered Seurat pipeline → resources. */
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --sunk:#E9EDF2; --ink:#0F1B2A; --muted:#566476; --line:#D8DFE7;
+  --accent:#3446C4; --ch-green:#16865A; --ch-mag:#B52F86; --ch-amber:#A86F00;
+  --good:#16865A; --bad:#B42318; --up:#C2410C; --down:#2563EB; --ns:#9AA6B5;
+  --code-bg:#0E1622; --code-ink:#DCE6F2; --code-dim:#7F90A6; --plot:#FFFFFF; --grid:#E4E9EF;
+  --f-display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --f-body:"Source Sans 3","Segoe UI",system-ui,-apple-system,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0A0F17; --surface:#111925; --sunk:#0D141E; --ink:#E5ECF4; --muted:#93A2B5; --line:#223042;
+  --accent:#8E9CFF; --ch-green:#4CD49A; --ch-mag:#F06DC2; --ch-amber:#F0B547;
+  --good:#4CD49A; --bad:#FF7A6E; --up:#FB923C; --down:#60A5FA; --ns:#5B6878;
+  --code-bg:#070C13; --plot:#0D141E; --grid:#1C2836; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0A0F17; --surface:#111925; --sunk:#0D141E; --ink:#E5ECF4; --muted:#93A2B5; --line:#223042;
+  --accent:#8E9CFF; --ch-green:#4CD49A; --ch-mag:#F06DC2; --ch-amber:#F0B547;
+  --good:#4CD49A; --bad:#FF7A6E; --up:#FB923C; --down:#60A5FA; --ns:#5B6878;
+  --code-bg:#070C13; --plot:#0D141E; --grid:#1C2836; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 17px/1.6 var(--f-body);-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+a{color:var(--accent);text-underline-offset:3px}
+a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.15;margin:0}
+h2{font-size:clamp(1.7rem,3.2vw,2.3rem);font-weight:700;letter-spacing:-.01em}
+h3{font-size:1.2rem;font-weight:700}
+p{margin:0}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.eyebrow{font:600 .74rem/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.prose{max-width:66ch;display:grid;gap:14px}
+.muted{color:var(--muted)}
+code{font-family:var(--f-mono);font-size:.86em;background:var(--sunk);padding:.1em .35em;border-radius:4px}
+
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--surface);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:20px;padding-block:10px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font:700 1.05rem var(--f-display);color:var(--ink);text-decoration:none}
+.brand i{width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 35% 35%,var(--ch-green) 0 22%,transparent 23%),radial-gradient(circle at 68% 60%,var(--ch-mag) 0 20%,transparent 21%),radial-gradient(circle at 40% 72%,var(--ch-amber) 0 14%,transparent 15%),var(--accent);display:block}
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;margin-left:auto}
+.tabs a{font:600 .88rem var(--f-body);color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap}
+.tabs a:hover{color:var(--ink);background:var(--sunk)}
+.modules{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.chip{font:600 .78rem var(--f-mono);padding:5px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:var(--surface);text-decoration:none}
+a.chip:hover{border-color:var(--muted);color:var(--ink)}
+.chip.on{border-color:var(--accent);color:var(--accent)}
+.chip.soon::after{content:" · soon";opacity:.7}
+
+.hero{padding-block:40px 28px}
+.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:36px;align-items:center}
+.hero h1{font-size:clamp(2.2rem,5vw,3.6rem);font-weight:700;letter-spacing:-.02em}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero .lede{font-size:1.15rem;color:var(--muted);max-width:52ch;margin-top:16px}
+.fig{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;max-width:100%}
+.fig canvas{width:100%;aspect-ratio:5/4;display:block}
+.fig figcaption{font:600 .72rem var(--f-mono);color:var(--muted);display:flex;gap:14px;flex-wrap:wrap;margin-top:6px}
+.fig figcaption span{display:flex;align-items:center;gap:5px}
+.fig figcaption b{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+section{padding-block:56px;border-top:1px solid var(--line)}
+.sec-head{display:grid;gap:10px;margin-bottom:28px}
+
+/* timeline */
+.timeline{position:relative;display:grid;gap:0;margin-top:8px}
+.era{display:grid;grid-template-columns:110px 28px minmax(0,1fr);gap:0 14px}
+.era .yr{font:700 1.15rem/1.3 var(--f-display);text-align:right;font-variant-numeric:tabular-nums;padding-top:2px}
+.era .rail{position:relative}
+.era .rail::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;transform:translateX(-50%);background:var(--line)}
+.era .rail i{position:absolute;left:50%;top:8px;width:14px;height:14px;border-radius:50%;transform:translateX(-50%);background:var(--surface);border:3px solid var(--c,var(--accent))}
+.era .body{padding-bottom:26px;display:grid;gap:6px;max-width:72ch}
+.era .body h3{font-size:1.08rem}
+.era .kind{font:600 .68rem var(--f-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--c,var(--accent))}
+.era .body p{color:var(--muted);font-size:.96rem}
+.era:last-child .rail::before{bottom:auto;height:20px}
+
+.flav{margin-top:36px;overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+.flav table,.cmp table,.res-table table{border-collapse:collapse;width:100%;font-size:.93rem}
+.flav table{min-width:820px}
+.flav th,.flav td,.cmp th,.cmp td,.res-table th,.res-table td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+.flav th,.cmp th,.res-table th{font:600 .72rem var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--sunk)}
+.flav tr:last-child td,.cmp tr:last-child td,.res-table tr:last-child td{border-bottom:0}
+.flav td:first-child{font-weight:700;white-space:nowrap}
+
+/* TMM explainer */
+.tmm{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:28px;align-items:start}
+.ctrl{display:grid;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+.ctrl label{display:grid;gap:4px;font-weight:600;font-size:.94rem}
+.ctrl label span{display:flex;justify-content:space-between;gap:8px}
+.ctrl output{font:600 .9rem var(--f-mono);color:var(--accent)}
+.ctrl input[type=range]{width:100%;accent-color:var(--accent)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:600 .86rem var(--f-body);border:0;background:var(--surface);color:var(--muted);padding:7px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.readout{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.readout div{background:var(--sunk);border-radius:8px;padding:10px 12px}
+.readout b{display:block;font:700 1.35rem var(--f-display);font-variant-numeric:tabular-nums}
+.readout small{color:var(--muted);font-size:.8rem}
+.ma-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;min-width:0}
+.ma-wrap canvas{width:100%;aspect-ratio:4/3;display:block}
+.ma-wrap p{font-size:.88rem;color:var(--muted);margin-top:8px}
+.steps-list{margin:0;padding-left:1.2em;display:grid;gap:6px}
+
+.cmp{margin-top:28px;overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+.cmp table{min-width:680px}
+
+/* pipeline */
+.pipe-layout{display:grid;grid-template-columns:240px minmax(0,1fr);gap:32px;align-items:start}
+.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 76px);display:grid;gap:2px;font-size:.9rem}
+.toc .prog{font:600 .78rem var(--f-mono);color:var(--muted);margin-bottom:8px}
+.toc .bar{height:4px;background:var(--sunk);border-radius:2px;overflow:hidden;margin-bottom:12px}
+.toc .bar i{display:block;height:100%;width:0;background:var(--ch-green);transition:width .3s}
+.toc a{display:grid;grid-template-columns:28px 1fr;gap:4px;padding:5px 6px;border-radius:6px;color:var(--muted);text-decoration:none}
+.toc a:hover{background:var(--sunk);color:var(--ink)}
+.toc a.done{color:var(--ch-green)}
+.toc a span:first-child{font:600 .78rem/1.7 var(--f-mono)}
+.steps{display:grid;gap:22px;min-width:0}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px;display:grid;gap:14px;min-width:0;scroll-margin-top:90px}
+.step-head{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:start}
+.num{font:700 1.5rem/1 var(--f-display);color:var(--accent);min-width:2ch;font-variant-numeric:tabular-nums}
+.step-head .kind{font:600 .7rem var(--f-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:4px}
+.done-toggle{display:flex;align-items:center;gap:6px;font:600 .8rem var(--f-body);color:var(--muted);cursor:pointer;white-space:nowrap}
+.done-toggle input{accent-color:var(--ch-green);width:16px;height:16px}
+.step .why{color:var(--muted);max-width:70ch}
+.callout{border-left:3px solid var(--ch-amber);background:color-mix(in srgb,var(--ch-amber) 8%,var(--surface));padding:10px 14px;border-radius:0 6px 6px 0;font-size:.93rem}
+.callout.new{border-color:var(--ch-mag);background:color-mix(in srgb,var(--ch-mag) 7%,var(--surface))}
+.callout.warn{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 7%,var(--surface))}
+.callout b{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+.check{border-left:3px solid var(--ch-green);background:color-mix(in srgb,var(--ch-green) 7%,var(--surface));padding:10px 14px;border-radius:0 6px 6px 0;font-size:.93rem}
+.check b{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;margin-right:6px;color:var(--ch-green)}
+.code{position:relative;background:var(--code-bg);border-radius:8px;min-width:0}
+.code .lang{position:absolute;left:14px;top:9px;font:600 .68rem var(--f-mono);color:var(--code-dim);letter-spacing:.1em;text-transform:uppercase}
+.code button{position:absolute;right:8px;top:6px;font:600 .74rem var(--f-mono);background:transparent;border:1px solid #2A3A50;color:var(--code-ink);padding:3px 9px;border-radius:5px;cursor:pointer}
+.code button:hover{border-color:var(--code-dim)}
+.code pre{margin:0;padding:34px 16px 16px;overflow-x:auto;font:400 .84rem/1.6 var(--f-mono);color:var(--code-ink);tab-size:2}
+.code pre .c{color:var(--code-dim)}
+.out{font:400 .82rem/1.6 var(--f-mono);background:var(--sunk);border-radius:8px;padding:12px 16px;overflow-x:auto;margin:0;white-space:pre;color:var(--ink)}
+.out::before{content:"Output";display:block;font:600 .66rem var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.res-table{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+.res-table table{min-width:420px;font-variant-numeric:tabular-nums}
+.res-table td.n{text-align:right}
+.res-table th.n{text-align:right}
+details.track{border:1px dashed var(--line);border-radius:8px;padding:10px 14px}
+details.track summary{cursor:pointer;font:600 .9rem var(--f-body);color:var(--accent)}
+details.track[open] summary{margin-bottom:10px}
+
+.res-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.res-grid h3{font-size:1rem;margin-bottom:10px}
+.res-grid ul{list-style:none;margin:0;padding:0;display:grid;gap:8px;font-size:.95rem}
+.res-grid li span{display:block;color:var(--muted);font-size:.85rem}
+dl.gloss{display:grid;grid-template-columns:minmax(150px,max-content) 1fr;gap:8px 20px;margin:0;font-size:.95rem}
+dl.gloss dt{font:600 .85rem var(--f-mono);color:var(--accent)}
+dl.gloss dd{margin:0}
+footer{padding-block:32px 48px;border-top:1px solid var(--line);color:var(--muted);font-size:.88rem}
+
+@media (max-width:900px){
+  .hero-grid,.pipe-layout,.tmm{grid-template-columns:1fr}
+  .res-grid{grid-template-columns:1fr 1fr}
+  .toc{position:static;grid-template-columns:1fr 1fr}
+  .toc .prog,.toc .bar{grid-column:1/-1}
+}
+@media (max-width:560px){
+  body{font-size:16px}
+  .res-grid,.toc{grid-template-columns:1fr}
+  .tabs{margin-left:0;width:100%}
+  .step{padding:18px}
+  .step-head{grid-template-columns:auto 1fr}
+  .done-toggle{grid-column:2}
+  .era{grid-template-columns:62px 22px minmax(0,1fr);gap:0 10px}
+  .era .yr{font-size:.95rem}
+  dl.gloss{grid-template-columns:1fr;gap:2px 0}
+  dl.gloss dd{margin-bottom:8px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+html{scroll-behavior:smooth}
+</style>
+</head>
+<body>
+
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="index.html"><i aria-hidden="true"></i>OmicsRun Learn</a>
+    <nav class="tabs" aria-label="Sections">
+      <a href="#evolution">Evolution</a>
+      <a href="#platforms">Platforms</a>
+      <a href="#harmony">Harmony explained</a>
+      <a href="#pipeline">Pipeline</a>
+      <a href="#resources">Resources</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <p class="eyebrow">Learning hub · Module 3 · Single-cell</p>
+        <h1>Single-cell RNA-seq with <em>Harmony</em> integration and cell-type annotation</h1>
+        <p class="lede">How single-cell sequencing developed, which platform to choose, how Harmony removes batch effects without erasing biology, and a full Seurat pipeline on real PBMC data. The pipeline uses LogNormalize (no SCTransform), Harmony integration, and automated annotation with ScType cross-checked against SingleR.</p>
+        <div class="modules" aria-label="Learning modules">
+          <a class="chip" href="xenium.html">Spatial · Xenium</a>
+          <a class="chip" href="rnaseq.html">RNA-seq · limma</a>
+          <span class="chip on">scRNA-seq · Harmony</span>
+          <span class="chip soon">Spatial · Visium HD</span>
+          <span class="chip soon">DNA-seq / WGS</span>
+        </div>
+      </div>
+      <figure class="fig">
+        <canvas id="umap" aria-label="Example UMAP of PBMC cell types"></canvas>
+        <figcaption id="umapLegend"></figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <!-- EVOLUTION -->
+  <section id="evolution">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Part 1 · History</p>
+        <h2>How single-cell RNA-seq evolved</h2>
+        <p class="muted" style="max-width:68ch">In fifteen years the field went from sequencing one cell to sequencing a hundred million. Most of the gains came from new ways to label each cell's RNA with a barcode: tubes, then plates, then droplets, then split-pool chemistry.</p>
+      </div>
+      <div class="timeline">
+        <div class="era" style="--c:var(--muted)"><div class="yr">2009</div><div class="rail"><i></i></div><div class="body"><p class="kind">First cell</p><h3>Single-cell transcriptome</h3><p>Tang et al. sequenced the mRNA of a single mouse blastomere. Each cell was handled by hand in its own tube.</p></div></div>
+        <div class="era" style="--c:var(--ch-amber)"><div class="yr">2012–14</div><div class="rail"><i></i></div><div class="body"><p class="kind">Plates</p><h3>Smart-seq, CEL-seq, MARS-seq</h3><p>Plate-based methods processed hundreds of cells, with full-length coverage (Smart-seq2) or early barcoding and UMIs to count molecules exactly (CEL-seq, MARS-seq). Nature Methods named single-cell sequencing Method of the Year 2013.</p></div></div>
+        <div class="era" style="--c:var(--accent)"><div class="yr">2015</div><div class="rail"><i></i></div><div class="body"><p class="kind">Droplets</p><h3>Drop-seq and inDrop</h3><p>Cells were captured in oil droplets with barcoded beads, raising throughput from hundreds to tens of thousands of cells per experiment.</p></div></div>
+        <div class="era" style="--c:var(--accent)"><div class="yr">2016–17</div><div class="rail"><i></i></div><div class="body"><p class="kind">Commercial scale</p><h3>10x Chromium, CITE-seq, split-pool</h3><p>The 10x Chromium made droplet scRNA-seq a standard kit. CITE-seq added surface proteins to the same cells. SPLiT-seq and sci-RNA-seq barcoded cells in plates without any instrument.</p></div></div>
+        <div class="era" style="--c:var(--ch-mag)"><div class="yr">2018–19</div><div class="rail"><i></i></div><div class="body"><p class="kind">Integration</p><h3>Combining datasets</h3><p>As studies grew to many donors and batches, integration became essential: Seurat anchors (Stuart et al.), scVI, and <strong>Harmony</strong> (Korsunsky et al., Nature Methods 2019). Harmony was fast enough for a laptop and became one of the most widely used methods.</p></div></div>
+        <div class="era" style="--c:var(--ch-mag)"><div class="yr">2020–22</div><div class="rail"><i></i></div><div class="body"><p class="kind">Multiome and atlases</p><h3>More layers, shared references</h3><p>Joint RNA + ATAC kits, nucleus-based protocols for frozen tissue, and reference atlases (Human Cell Atlas, Azimuth, CELLxGENE) made automated annotation practical.</p></div></div>
+        <div class="era" style="--c:var(--ch-green)"><div class="yr">2023–24</div><div class="rail"><i></i></div><div class="body"><p class="kind">Fixed cells and millions</p><h3>Probe-based and million-cell runs</h3><p>Fixed-RNA probe assays (10x Flex) separated sample collection from processing, which matters for clinical work. Split-pool kits reached millions of cells per experiment. Seurat v5 added on-disk data and sketching for this scale.</p></div></div>
+        <div class="era" style="--c:var(--ch-green)"><div class="yr">2025–26</div><div class="rail"><i></i></div><div class="body"><p class="kind">Now</p><h3>Perturbation atlases and foundation models</h3><p>Datasets of up to ~100 million cells, such as large drug and CRISPR perturbation screens, train single-cell foundation models (scGPT, Geneformer and successors). The core workflow you will learn below (QC, normalisation, integration, clustering, annotation) is still the foundation for using them.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLATFORMS -->
+  <section id="platforms">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Part 2 · Choosing a platform</p>
+        <h2>Single-cell platforms: advantages and limitations</h2>
+      </div>
+      <div class="flav">
+        <table>
+          <thead><tr><th>Platform</th><th>How cells are barcoded</th><th>Advantages</th><th>Limitations</th><th>Cells per run</th></tr></thead>
+          <tbody>
+            <tr><td>10x Chromium (3′, 5′, GEM-X)</td><td>Droplets with barcoded gel beads</td><td>Industry standard; Cell Ranger and broad tool support; 5′ adds immune receptor (TCR/BCR) sequencing</td><td>Needs fresh viable cells; instrument required; cost per cell</td><td>Thousands to ~1M with multiplexing</td></tr>
+            <tr><td>10x Flex</td><td>Probe hybridisation on fixed cells, then droplets</td><td>Fixed or FFPE samples; batch samples from many sites; high sensitivity</td><td>Targeted probe set; no isoforms or TCR/BCR</td><td>Up to hundreds of thousands, multiplexed</td></tr>
+            <tr><td>Parse Evercode</td><td>Split-pool combinatorial barcoding in plates</td><td>No instrument; fixed cells; very large sample and cell numbers</td><td>Longer hands-on protocol; needs high cell input</td><td>Up to millions</td></tr>
+            <tr><td>Scale Bio</td><td>Combinatorial indexing (split-pool)</td><td>Low cost per cell at scale</td><td>Smaller ecosystem</td><td>Up to millions</td></tr>
+            <tr><td>BD Rhapsody</td><td>Microwells with barcoded beads</td><td>Gentle cell capture; targeted panels plus AbSeq proteins</td><td>Lower throughput than droplets</td><td>Tens of thousands</td></tr>
+            <tr><td>Illumina Single Cell (PIPseq)</td><td>Particle-templated emulsion in a tube</td><td>No instrument; vortex-based; scalable</td><td>Newer, fewer published benchmarks</td><td>Thousands to ~1M</td></tr>
+            <tr><td>Smart-seq3 (plate)</td><td>One cell per well</td><td>Full-length transcripts and isoforms; highest genes per cell</td><td>Low throughput; manual or robotic sorting</td><td>Hundreds</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="cmp">
+        <table>
+          <thead><tr><th>Integration method</th><th>Approach</th><th>Strengths</th><th>Watch out for</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Harmony</strong></td><td>Iterative soft clustering + linear correction in PCA space</td><td>Fast, memory-light, works on millions of cells, multiple batch variables</td><td>Corrects the embedding only, not the counts</td></tr>
+            <tr><td>Seurat CCA / RPCA</td><td>Anchors between dataset pairs</td><td>Good for very different datasets (RPCA is faster)</td><td>Slower; CCA can over-correct</td></tr>
+            <tr><td>scVI / scANVI</td><td>Variational autoencoder</td><td>Top performer on complex atlases; scANVI uses labels</td><td>Python, GPU helpful, more tuning</td></tr>
+            <tr><td>fastMNN</td><td>Mutual nearest neighbours</td><td>Bioconductor-native</td><td>Order of batches matters</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- HARMONY -->
+  <section id="harmony">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Part 3 · Concept</p>
+        <h2>How Harmony works</h2>
+      </div>
+      <div class="tmm">
+        <div class="prose">
+          <p>The same cell type looks slightly different in each batch. Differences in sample handling, chemistry, sequencing run or donor shift the cells in PCA space. If you cluster without correcting, you get "batch clusters" instead of cell-type clusters.</p>
+          <p>Harmony works on the PCA embedding and repeats two steps:</p>
+          <ol class="steps-list">
+            <li><strong>Soft clustering with a diversity penalty.</strong> Cells are softly assigned to clusters, and clusters made of only one batch are penalised. Strength is set by <code>theta</code>; higher means more mixing.</li>
+            <li><strong>Correction.</strong> Within each cluster, every batch's centre is moved toward the cluster's overall centre, weighted by how strongly each cell belongs to that cluster.</li>
+          </ol>
+          <p>It stops when the clusters stop changing. Because corrections are made per cluster, a cell type present in only one batch (the small purple group here) is not forced onto another type.</p>
+          <p>Move the slider through the iterations. Batch mixing rises while cell types stay separate.</p>
+        </div>
+        <div style="display:grid;gap:16px;min-width:0">
+          <div class="ma-wrap">
+            <canvas id="harm" aria-label="Simulated PCA embedding of two batches and five cell types, before and during Harmony iterations"></canvas>
+            <p id="harmCap">Shape = batch (● batch 1, ▲ batch 2); colour = cell type. Purple type is rare in batch 2.</p>
+          </div>
+          <div class="ctrl">
+            <div class="seg" role="group" aria-label="Colour by">
+              <button type="button" data-c="type" aria-pressed="true">Colour by cell type</button>
+              <button type="button" data-c="batch" aria-pressed="false">Colour by batch</button>
+            </div>
+            <label for="iter"><span>Harmony iteration <output id="itero">0 (uncorrected)</output></span><input type="range" id="iter" min="0" max="5" step="1" value="0"></label>
+            <div class="readout">
+              <div><small>Batch mixing (kNN, higher = better)</small><b id="mixV">0.00</b></div>
+              <div><small>Cell-type purity (kNN, keep high)</small><b id="purV">0.00</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="callout" style="margin-top:24px;max-width:80ch"><b>Note</b>This is a 2-D teaching simulation of Harmony's algorithm. The real method runs on 20–50 principal components with the same logic.</div>
+    </div>
+  </section>
+
+  <!-- PIPELINE -->
+  <section id="pipeline">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Part 4 · Hands-on tutorial</p>
+        <h2>Seurat pipeline: LogNormalize → Harmony → annotation</h2>
+        <p class="muted" style="max-width:76ch">Uses the <code>ifnb</code> dataset from SeuratData: about 14,000 human PBMCs (Kang et al., 2018), half in a control batch and half stimulated with interferon-β. The stimulation shifts every cell type, a strong batch-like effect that integration has to handle without losing cell identity. The dataset ships with published annotations, so you can score your own annotation against them. Progress is saved in this browser.</p>
+      </div>
+
+      <div class="pipe-layout">
+        <nav class="toc" aria-label="Pipeline steps" id="toc">
+          <p class="prog" id="progtxt">0 of 14 steps done</p>
+          <div class="bar"><i id="progbar"></i></div>
+        </nav>
+
+        <div class="steps">
+
+          <article class="step" id="s1" data-title="Set up R">
+            <div class="step-head"><span class="num">01</span><div><p class="kind">Setup</p><h3>Install packages</h3></div><label class="done-toggle"><input type="checkbox" id="d-s1">Done</label></div>
+            <p class="why">Seurat v5 for the workflow, harmony for integration, scDblFinder for doublets, ScType (sourced from GitHub) plus SingleR and celldex for annotation.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>install.packages(c("Seurat", "harmony", "remotes", "BiocManager", "dplyr",
+                   "ggplot2", "HGNChelper", "openxlsx", "metap"))
+remotes::install_github("satijalab/seurat-data")
+BiocManager::install(c("scDblFinder", "SingleR", "celldex", "SingleCellExperiment",
+                       "limma", "edgeR"))
+
+library(Seurat); library(SeuratData); library(harmony)
+library(dplyr); library(ggplot2)
+options(future.globals.maxSize = 8 * 1024^3)</pre></div>
+          </article>
+
+          <article class="step" id="s2" data-title="FASTQ to matrix">
+            <div class="step-head"><span class="num">02</span><div><p class="kind">Upstream</p><h3>From FASTQ files to a count matrix</h3></div><label class="done-toggle"><input type="checkbox" id="d-s2">Done</label></div>
+            <p class="why">For your own 10x data, Cell Ranger (or nf-core/scrnaseq, which wraps Cell Ranger, STARsolo, alevin-fry or kallisto|bustools) produces a <code>filtered_feature_bc_matrix</code> folder per sample.</p>
+            <div class="code"><span class="lang">Shell</span><button type="button">Copy</button><pre>cellranger count --id=donor1 --create-bam=false \
+  --transcriptome=refdata-gex-GRCh38-2024-A \
+  --fastqs=fastq/donor1 --sample=donor1 --localcores=16 --localmem=64
+
+<span class="c"># or, reproducible on any cloud:</span>
+nextflow run nf-core/scrnaseq -profile docker --input samplesheet.csv \
+  --aligner cellranger --genome GRCh38 --outdir results</pre></div>
+            <details class="track">
+              <summary>Loading your own samples instead of ifnb</summary>
+              <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>samples &lt;- c("donor1", "donor2", "donor3")
+objs &lt;- lapply(samples, function(s) {
+  m &lt;- Read10X(file.path("results", s, "outs/filtered_feature_bc_matrix"))
+  o &lt;- CreateSeuratObject(m, project = s, min.cells = 3, min.features = 200)
+  o$sample &lt;- s
+  o
+})
+obj &lt;- merge(objs[[1]], objs[-1], add.cell.ids = samples)
+<span class="c"># merge() keeps one counts layer per sample, ready for step 05</span></pre></div>
+            </details>
+          </article>
+
+          <article class="step" id="s3" data-title="Load ifnb">
+            <div class="step-head"><span class="num">03</span><div><p class="kind">Import</p><h3>Load the practice dataset</h3></div><label class="done-toggle"><input type="checkbox" id="d-s3">Done</label></div>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>InstallData("ifnb")
+ifnb &lt;- LoadData("ifnb")
+ifnb &lt;- UpdateSeuratObject(ifnb)
+ifnb
+table(ifnb$stim)                       <span class="c"># CTRL vs STIM: the batch variable</span>
+head(ifnb$seurat_annotations)          <span class="c"># published labels: our answer key</span></pre></div>
+          </article>
+
+          <article class="step" id="s4" data-title="QC &amp; doublets">
+            <div class="step-head"><span class="num">04</span><div><p class="kind">QC</p><h3>Filter low-quality cells and doublets</h3></div><label class="done-toggle"><input type="checkbox" id="d-s4">Done</label></div>
+            <p class="why">Remove dying cells (high mitochondrial fraction), empty or broken droplets (few genes), and doublets (two cells in one droplet). Choose thresholds per dataset from the plots, not from a fixed rule.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>ifnb[["percent.mt"]] &lt;- PercentageFeatureSet(ifnb, pattern = "^MT-")
+VlnPlot(ifnb, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"),
+        group.by = "stim", pt.size = 0, ncol = 3)
+FeatureScatter(ifnb, "nCount_RNA", "nFeature_RNA", group.by = "stim")
+
+ifnb &lt;- subset(ifnb, subset = nFeature_RNA &gt; 200 &amp; nFeature_RNA &lt; 2500 &amp;
+                              percent.mt &lt; 10)
+
+<span class="c"># doublets, detected per sample</span>
+library(scDblFinder)
+sce &lt;- scDblFinder(as.SingleCellExperiment(ifnb), samples = "stim")
+ifnb$doublet &lt;- sce$scDblFinder.class
+table(ifnb$doublet)
+ifnb &lt;- subset(ifnb, subset = doublet == "singlet")</pre></div>
+            <div class="callout"><b>ifnb</b>The authors pre-filtered this dataset, so few cells are removed here and mitochondrial genes may be largely absent. On your own data, these filters matter a lot. Also consider ambient-RNA removal (SoupX, CellBender) for tissue samples.</div>
+          </article>
+
+          <article class="step" id="s5" data-title="LogNormalize">
+            <div class="step-head"><span class="num">05</span><div><p class="kind">Normalisation</p><h3>Split by batch and LogNormalize</h3></div><label class="done-toggle"><input type="checkbox" id="d-s5">Done</label></div>
+            <p class="why">We use Seurat's standard log-normalisation, not SCTransform. Each cell's counts are divided by its total, multiplied by 10,000, and log-transformed. It is simple, fast, transparent, and works well with Harmony. Splitting the RNA assay into one layer per batch lets Seurat select variable genes per batch.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>ifnb[["RNA"]] &lt;- split(ifnb[["RNA"]], f = ifnb$stim)   <span class="c"># layers: counts.CTRL, counts.STIM</span>
+
+ifnb &lt;- NormalizeData(ifnb, normalization.method = "LogNormalize",
+                      scale.factor = 10000)
+ifnb &lt;- FindVariableFeatures(ifnb, selection.method = "vst", nfeatures = 2000)
+ifnb &lt;- ScaleData(ifnb)          <span class="c"># optional: vars.to.regress = "percent.mt"</span></pre></div>
+            <div class="callout new"><b>Why not SCTransform?</b>Both are valid. LogNormalize keeps one clear "data" layer that marker tests, ScType, SingleR and pseudobulk all use directly. SCTransform needs extra steps (<code>PrepSCTFindMarkers</code>) and more memory on large datasets.</div>
+          </article>
+
+          <article class="step" id="s6" data-title="PCA">
+            <div class="step-head"><span class="num">06</span><div><p class="kind">Reduction</p><h3>PCA and choosing dimensions</h3></div><label class="done-toggle"><input type="checkbox" id="d-s6">Done</label></div>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>ifnb &lt;- RunPCA(ifnb, npcs = 50)
+ElbowPlot(ifnb, ndims = 50)          <span class="c"># the curve flattens around 20–30 PCs</span>
+DimHeatmap(ifnb, dims = 1:6, cells = 500, balanced = TRUE)</pre></div>
+          </article>
+
+          <article class="step" id="s7" data-title="See the batch effect">
+            <div class="step-head"><span class="num">07</span><div><p class="kind">Diagnose</p><h3>Look at the data before integration</h3></div><label class="done-toggle"><input type="checkbox" id="d-s7">Done</label></div>
+            <p class="why">Always look first. If CTRL and STIM cells form separate islands for the same cell type, integration is needed. If they already overlap, it may not be.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>ifnb &lt;- FindNeighbors(ifnb, dims = 1:30, reduction = "pca")
+ifnb &lt;- FindClusters(ifnb, resolution = 0.5, cluster.name = "unintegrated_clusters")
+ifnb &lt;- RunUMAP(ifnb, dims = 1:30, reduction = "pca",
+                reduction.name = "umap.unintegrated")
+DimPlot(ifnb, reduction = "umap.unintegrated", group.by = c("stim", "seurat_annotations"))</pre></div>
+            <div class="check"><b>Expect</b>Each cell type splits into a CTRL island and a STIM island. That separation is the interferon response acting like a batch effect.</div>
+          </article>
+
+          <article class="step" id="s8" data-title="Harmony integration">
+            <div class="step-head"><span class="num">08</span><div><p class="kind">Integration</p><h3>Integrate with Harmony</h3></div><label class="done-toggle"><input type="checkbox" id="d-s8">Done</label></div>
+            <p class="why">Harmony takes the PCA embedding and returns a corrected embedding called <code>harmony</code>. Every downstream step (neighbours, clusters, UMAP) uses it instead of <code>pca</code>. Counts and the data layer are not changed.</p>
+            <div class="code"><span class="lang">R · Seurat v5 interface</span><button type="button">Copy</button><pre>ifnb &lt;- IntegrateLayers(object = ifnb, method = HarmonyIntegration,
+                        orig.reduction = "pca", new.reduction = "harmony",
+                        verbose = FALSE)</pre></div>
+            <div class="code"><span class="lang">R · harmony package directly</span><button type="button">Copy</button><pre><span class="c"># same result, with full control over parameters</span>
+ifnb &lt;- RunHarmony(ifnb, group.by.vars = "stim", reduction.use = "pca",
+                   dims.use = 1:30, theta = 2, reduction.save = "harmony")
+
+<span class="c"># several batch variables, e.g. sample and chemistry:</span>
+<span class="c"># RunHarmony(obj, group.by.vars = c("sample", "chemistry"), theta = c(2, 1))</span></pre></div>
+            <div class="callout"><b>Which batch?</b>Correct for <em>technical</em> variables (sample, lane, chemistry, donor). If you correct for your biological condition, as we do here for teaching, you must test condition effects later on the uncorrected data. Step 13 does that.</div>
+          </article>
+
+          <article class="step" id="s9" data-title="Cluster &amp; UMAP">
+            <div class="step-head"><span class="num">09</span><div><p class="kind">Clustering</p><h3>Cluster and visualise on the Harmony embedding</h3></div><label class="done-toggle"><input type="checkbox" id="d-s9">Done</label></div>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>ifnb &lt;- FindNeighbors(ifnb, reduction = "harmony", dims = 1:30)
+ifnb &lt;- FindClusters(ifnb, resolution = 0.5, cluster.name = "harmony_clusters")
+ifnb &lt;- RunUMAP(ifnb, reduction = "harmony", dims = 1:30,
+                reduction.name = "umap.harmony")
+
+DimPlot(ifnb, reduction = "umap.harmony",
+        group.by = c("stim", "harmony_clusters"), label = TRUE)
+
+ifnb &lt;- JoinLayers(ifnb)    <span class="c"># merge CTRL/STIM layers back for marker testing</span></pre></div>
+            <div class="callout"><b>Resolution</b>Try 0.3–1.2. Use <code>clustree</code> to see how clusters split as resolution rises. Pick the lowest value that separates the cell types you care about.</div>
+          </article>
+
+          <article class="step" id="s10" data-title="Check integration">
+            <div class="step-head"><span class="num">10</span><div><p class="kind">Diagnose</p><h3>Check that integration worked</h3></div><label class="done-toggle"><input type="checkbox" id="d-s10">Done</label></div>
+            <p class="why">Good integration mixes batches within clusters but keeps cell types apart. Check both, numerically.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre><span class="c"># each cluster should contain both conditions</span>
+prop.table(table(ifnb$harmony_clusters, ifnb$stim), margin = 1) |&gt; round(2)
+
+<span class="c"># LISI: iLISI ≈ 2 means two batches fully mixed; cLISI ≈ 1 means types kept apart</span>
+remotes::install_github("immunogenomics/lisi")
+meta &lt;- ifnb@meta.data[, c("stim", "seurat_annotations")]
+before &lt;- lisi::compute_lisi(Embeddings(ifnb, "pca")[, 1:30], meta, colnames(meta))
+after  &lt;- lisi::compute_lisi(Embeddings(ifnb, "harmony")[, 1:30], meta, colnames(meta))
+sapply(list(before = before, after = after), colMeans)</pre></div>
+            <div class="callout warn"><b>Over-correction</b>If clearly different cell types (for example CD4 T and NK cells) start to merge, lower <code>theta</code> or correct for fewer variables.</div>
+          </article>
+
+          <article class="step" id="s11" data-title="Marker genes">
+            <div class="step-head"><span class="num">11</span><div><p class="kind">Annotation · evidence</p><h3>Find marker genes</h3></div><label class="done-toggle"><input type="checkbox" id="d-s11">Done</label></div>
+            <p class="why">Markers are the evidence behind every label. <code>FindConservedMarkers</code> finds genes that mark a cluster in <em>both</em> conditions, so they reflect cell identity rather than the stimulation.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>Idents(ifnb) &lt;- "harmony_clusters"
+markers &lt;- FindAllMarkers(ifnb, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.5)
+markers |&gt; group_by(cluster) |&gt; slice_max(avg_log2FC, n = 5)
+
+FindConservedMarkers(ifnb, ident.1 = "0", grouping.var = "stim") |&gt; head()
+
+canonical &lt;- c("CD3D", "IL7R", "CCR7", "CD8A", "GNLY", "NKG7", "MS4A1", "CD79A",
+               "CD14", "LYZ", "FCGR3A", "FCER1A", "LILRA4", "PPBP", "HBB")
+DotPlot(ifnb, features = canonical) + RotatedAxis()</pre></div>
+            <div class="flav" style="margin-top:0"><table style="min-width:520px">
+              <thead><tr><th>PBMC cell type</th><th>Key markers</th></tr></thead>
+              <tbody>
+                <tr><td>CD4 T (naive / memory)</td><td>CD3D, IL7R, CCR7 (naive), S100A4 (memory)</td></tr>
+                <tr><td>CD8 T</td><td>CD3D, CD8A, CD8B</td></tr>
+                <tr><td>NK</td><td>GNLY, NKG7, no CD3D</td></tr>
+                <tr><td>B</td><td>MS4A1, CD79A</td></tr>
+                <tr><td>CD14 monocyte</td><td>CD14, LYZ</td></tr>
+                <tr><td>CD16 monocyte</td><td>FCGR3A, MS4A7</td></tr>
+                <tr><td>Dendritic cell (cDC / pDC)</td><td>FCER1A, CLEC10A / LILRA4, IL3RA</td></tr>
+                <tr><td>Platelet / erythrocyte</td><td>PPBP / HBB</td></tr>
+              </tbody>
+            </table></div>
+          </article>
+
+          <article class="step" id="s12" data-title="Annotate cell types">
+            <div class="step-head"><span class="num">12</span><div><p class="kind">Annotation · automated</p><h3>Annotate cell types with ScType, confirm with SingleR</h3></div><label class="done-toggle"><input type="checkbox" id="d-s12">Done</label></div>
+            <p class="why">ScType scores each cluster against a curated database of positive and negative marker genes for a tissue. SingleR uses a different source of evidence: correlation with a labelled reference. Where the two agree and the markers from step 11 support it, the label is reliable. Where they disagree, look closer.</p>
+            <div class="code"><span class="lang">R · ScType</span><button type="button">Copy</button><pre>library(HGNChelper); library(openxlsx)
+source("https://raw.githubusercontent.com/IanevskiAleksandr/sc-type/master/R/gene_sets_prepare.R")
+source("https://raw.githubusercontent.com/IanevskiAleksandr/sc-type/master/R/sctype_score_.R")
+db &lt;- "https://raw.githubusercontent.com/IanevskiAleksandr/sc-type/master/ScTypeDB_full.xlsx"
+gs &lt;- gene_sets_prepare(db, "Immune system")       <span class="c"># tissue: Immune system, Brain, Liver, ...</span>
+
+<span class="c"># ScType needs scaled values for its marker genes</span>
+feats &lt;- union(VariableFeatures(ifnb), intersect(unlist(gs$gs_positive), rownames(ifnb)))
+ifnb &lt;- ScaleData(ifnb, features = feats)
+scaled &lt;- as.matrix(LayerData(ifnb, assay = "RNA", layer = "scale.data"))
+
+es &lt;- sctype_score(scRNAseqData = scaled, scaled = TRUE,
+                   gs = gs$gs_positive, gs2 = gs$gs_negative)
+
+cl &lt;- do.call(rbind, lapply(levels(ifnb$harmony_clusters), function(k) {
+  cells &lt;- colnames(ifnb)[ifnb$harmony_clusters == k]
+  s &lt;- sort(rowSums(es[, cells, drop = FALSE]), decreasing = TRUE)
+  data.frame(cluster = k, type = names(s)[1], score = s[1], ncells = length(cells))
+}))
+cl$type[cl$score &lt; cl$ncells / 4] &lt;- "Unknown"        <span class="c"># low-confidence clusters</span>
+ifnb$sctype &lt;- cl$type[match(ifnb$harmony_clusters, cl$cluster)]
+DimPlot(ifnb, reduction = "umap.harmony", group.by = "sctype", label = TRUE, repel = TRUE)</pre></div>
+            <div class="code"><span class="lang">R · SingleR cross-check</span><button type="button">Copy</button><pre>library(SingleR); library(celldex)
+ref &lt;- celldex::MonacoImmuneData()                  <span class="c"># sorted human immune cells</span>
+pred &lt;- SingleR(test = LayerData(ifnb, layer = "data"), ref = ref,
+                labels = ref$label.fine, clusters = ifnb$harmony_clusters)
+ifnb$singler &lt;- pred$labels[match(ifnb$harmony_clusters, rownames(pred))]
+
+<span class="c"># compare both methods, and score against the published labels</span>
+table(ScType = ifnb$sctype, SingleR = ifnb$singler)
+table(ScType = ifnb$sctype, Published = ifnb$seurat_annotations)</pre></div>
+            <div class="code"><span class="lang">R · final labels</span><button type="button">Copy</button><pre><span class="c"># use the agreed label; resolve disagreements from the DotPlot</span>
+ifnb$celltype &lt;- ifnb$sctype
+<span class="c"># e.g. ifnb$celltype[ifnb$harmony_clusters == "7"] &lt;- "pDC"</span>
+Idents(ifnb) &lt;- "celltype"
+DimPlot(ifnb, reduction = "umap.harmony", label = TRUE, repel = TRUE) + NoLegend()</pre></div>
+            <div class="callout new"><b>Also</b>Azimuth (<code>RunAzimuth(ifnb, reference = "pbmcref")</code>) maps cells to a Seurat reference atlas. In Python, CellTypist offers many pre-trained immune and tissue models. Use at least two lines of evidence for every label.</div>
+          </article>
+
+          <article class="step" id="s13" data-title="Condition DE">
+            <div class="step-head"><span class="num">13</span><div><p class="kind">Biology</p><h3>Compare conditions within each cell type</h3></div><label class="done-toggle"><input type="checkbox" id="d-s13">Done</label></div>
+            <p class="why">Integration helped us find matching cell types; now test the stimulation within each one. Tests use the normalised expression values, never the Harmony embedding. With biological replicates, use pseudobulk: sum counts per sample and cell type, then run limma-voom with TMM, exactly as in Module 2.</p>
+            <div class="code"><span class="lang">R · teaching (ifnb has no donor IDs)</span><button type="button">Copy</button><pre>ifnb$celltype.stim &lt;- paste(ifnb$celltype, ifnb$stim, sep = "_")
+Idents(ifnb) &lt;- "celltype.stim"
+mono_ifn &lt;- FindMarkers(ifnb, ident.1 = "Classical Monocytes_STIM",   <span class="c"># use your label names</span>
+                        ident.2 = "Classical Monocytes_CTRL")
+head(mono_ifn, 10)          <span class="c"># expect interferon genes: ISG15, IFIT1, IFI6, MX1</span>
+FeaturePlot(ifnb, c("ISG15", "CXCL10"), split.by = "stim", reduction = "umap.harmony")</pre></div>
+            <div class="code"><span class="lang">R · real studies: pseudobulk + limma-voom</span><button type="button">Copy</button><pre>library(edgeR); library(limma)
+<span class="c"># obj has columns: celltype, sample (donor), condition</span>
+pb &lt;- AggregateExpression(obj, assays = "RNA", group.by = c("celltype", "sample"),
+                          return.seurat = FALSE)$RNA
+colnames(pb)                                  <span class="c"># e.g. "CD14 Mono_donor1"</span>
+mono &lt;- pb[, startsWith(colnames(pb), "CD14 Mono_")]
+smp  &lt;- sub("^CD14 Mono_", "", colnames(mono))
+cond &lt;- factor(obj$condition[match(smp, obj$sample)])
+
+y &lt;- DGEList(mono, group = cond)
+y &lt;- y[filterByExpr(y), , keep.lib.sizes = FALSE]
+y &lt;- calcNormFactors(y, method = "TMM")
+design &lt;- model.matrix(~ cond)
+fit &lt;- eBayes(lmFit(voom(y, design), design))
+topTable(fit, coef = 2, n = 20)</pre></div>
+            <div class="callout warn"><b>Don't</b>Treating each cell as an independent replicate inflates significance hugely (pseudoreplication). For publication-grade condition comparisons, use pseudobulk across donors.</div>
+          </article>
+
+          <article class="step" id="s14" data-title="Save &amp; report">
+            <div class="step-head"><span class="num">14</span><div><p class="kind">Deliver</p><h3>Save, export and report</h3></div><label class="done-toggle"><input type="checkbox" id="d-s14">Done</label></div>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>saveRDS(ifnb, "ifnb_harmony_annotated.rds")
+write.csv(markers, "cluster_markers.csv", row.names = FALSE)
+write.csv(ifnb@meta.data, "cell_metadata.csv")
+write.csv(Embeddings(ifnb, "umap.harmony"), "umap_harmony.csv")
+writeLines(capture.output(sessionInfo()), "sessionInfo.txt")
+
+<span class="c"># optional: hand off to Python (scanpy, CellTypist, cellxgene)</span>
+<span class="c"># SeuratDisk / anndataR can convert the object to .h5ad</span></pre></div>
+            <div class="check"><b>Report</b>QC thresholds and cells removed · doublet method · normalisation (LogNormalize, scale factor 10,000) · number of variable genes and PCs · Harmony variables and theta · clustering resolution · annotation evidence (markers + ScType + SingleR) · package versions.</div>
+            <details class="track">
+              <summary>Python track: the same workflow in scanpy</summary>
+              <div class="code"><span class="lang">Python</span><button type="button">Copy</button><pre>import scanpy as sc, celltypist
+
+adata = sc.read_h5ad("pbmc.h5ad")
+sc.pp.filter_cells(adata, min_genes=200)
+adata.var["mt"] = adata.var_names.str.startswith("MT-")
+sc.pp.calculate_qc_metrics(adata, qc_vars=["mt"], inplace=True)
+adata = adata[adata.obs.pct_counts_mt &lt; 10].copy()
+adata.layers["counts"] = adata.X.copy()
+
+sc.pp.normalize_total(adata, target_sum=1e4); sc.pp.log1p(adata)   <span class="c"># = LogNormalize</span>
+sc.pp.highly_variable_genes(adata, n_top_genes=2000, batch_key="stim")
+sc.pp.scale(adata, max_value=10); sc.tl.pca(adata, n_comps=50)
+
+sc.external.pp.harmony_integrate(adata, key="stim")          <span class="c"># needs harmonypy</span>
+sc.pp.neighbors(adata, use_rep="X_pca_harmony", n_pcs=30)
+sc.tl.leiden(adata, resolution=0.5); sc.tl.umap(adata)
+
+pred = celltypist.annotate(adata, model="Immune_All_Low.pkl", majority_voting=True)
+adata.obs["celltypist"] = pred.predicted_labels["majority_voting"]</pre></div>
+            </details>
+          </article>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="resources">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Part 5 · Go further</p>
+        <h2>Resources and glossary</h2>
+      </div>
+      <div class="res-grid">
+        <div>
+          <h3>Methods</h3>
+          <ul>
+            <li><a href="https://github.com/immunogenomics/harmony" target="_blank" rel="noopener">Harmony</a><span>Korsunsky et al., Nature Methods 2019</span></li>
+            <li><a href="https://github.com/IanevskiAleksandr/sc-type" target="_blank" rel="noopener">ScType</a><span>Ianevski et al., Nature Communications 2022</span></li>
+            <li><a href="https://bioconductor.org/packages/SingleR/" target="_blank" rel="noopener">SingleR</a><span>Reference-based annotation</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Guides</h3>
+          <ul>
+            <li><a href="https://satijalab.org/seurat/articles/integration_introduction" target="_blank" rel="noopener">Seurat · Integration introduction</a><span>The ifnb dataset in Seurat v5</span></li>
+            <li><a href="https://www.sc-best-practices.org/" target="_blank" rel="noopener">Single-cell best practices</a><span>Open book from the scverse community</span></li>
+            <li><a href="https://bioconductor.org/books/release/OSCA/" target="_blank" rel="noopener">Orchestrating Single-Cell Analysis</a><span>Bioconductor book</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Pipelines and data</h3>
+          <ul>
+            <li><a href="https://nf-co.re/scrnaseq" target="_blank" rel="noopener">nf-core/scrnaseq</a><span>FASTQ → matrices; runs on AWS</span></li>
+            <li><a href="https://cellxgene.cziscience.com/" target="_blank" rel="noopener">CELLxGENE</a><span>Millions of annotated public cells</span></li>
+            <li><a href="rnaseq.html">Module 2 · limma-voom</a><span>For pseudobulk DE</span></li>
+          </ul>
+        </div>
+      </div>
+      <h3 style="margin:40px 0 16px">Glossary</h3>
+      <dl class="gloss">
+        <dt>UMI</dt><dd>Unique molecular identifier: a random barcode on each captured molecule, so PCR duplicates are counted once.</dd>
+        <dt>Doublet</dt><dd>A droplet that captured two cells; it looks like a hybrid cell type.</dd>
+        <dt>LogNormalize</dt><dd>log1p(count / cell total × 10,000): Seurat's default normalisation.</dd>
+        <dt>Batch effect</dt><dd>Technical variation between groups of samples processed differently.</dd>
+        <dt>theta (Harmony)</dt><dd>Diversity penalty strength; higher values push harder for batch mixing.</dd>
+        <dt>LISI</dt><dd>Local inverse Simpson's index: the effective number of batches (iLISI) or cell types (cLISI) around each cell.</dd>
+        <dt>Pseudobulk</dt><dd>Summing counts over cells of one type per sample, giving proper replicates for DE testing.</dd>
+      </dl>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">Module 3 of the OmicsRun learning hub. Platform details as of October 2026; check vendor documentation before designing a study.</div>
+</footer>
+
+<script>
+(function(){
+  const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  function rng(seed){let s=seed;return()=>{s=(s*16807)%2147483647;return s/2147483647}}
+  function gauss(r){let u=0,v=0;while(!u)u=r();while(!v)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+  function setup(cv){const b=cv.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);cv.width=b.width*d;cv.height=b.height*d;const g=cv.getContext('2d');g.scale(d,d);return{g,W:b.width,H:b.height}}
+  const PAL=['--accent','--ch-green','--ch-mag','--ch-amber','--down','--up','--muted'];
+
+  /* hero UMAP */
+  const types=[['CD4 T',[-2.5,1.5],1.1,500],['CD8 T',[-0.6,2.6],0.6,200],['NK',[0.6,3.4],0.55,160],['B',[3.2,2.4],0.6,180],['CD14 Mono',[1.2,-2.2],1.0,420],['CD16 Mono',[3.3,-1.4],0.5,110],['DC',[-1.6,-2.6],0.35,50]];
+  const uc=document.getElementById('umap');
+  document.getElementById('umapLegend').innerHTML=types.map((t,i)=>'<span><b style="background:var('+PAL[i]+')"></b>'+t[0]+'</span>').join('');
+  function drawUMAP(){
+    if(!uc.getBoundingClientRect().width)return;
+    const {g,W,H}=setup(uc), r=rng(3);
+    g.fillStyle=css('--plot');g.fillRect(0,0,W,H);
+    const sx=x=>W/2+x*W/10.5, sy=y=>H/2-y*H/9;
+    types.forEach((t,i)=>{g.fillStyle=css(PAL[i]);g.globalAlpha=.7;
+      for(let k=0;k<t[3];k++){const a=gauss(r)*t[2],b=gauss(r)*t[2]*0.7,rot=i*0.7;
+        g.beginPath();g.arc(sx(t[1][0]+a*Math.cos(rot)-b*Math.sin(rot)),sy(t[1][1]+a*Math.sin(rot)+b*Math.cos(rot)),1.7,0,7);g.fill()}});
+    g.globalAlpha=1;g.fillStyle=css('--ink');g.font='600 12px '+css('--f-body');g.textAlign='center';
+    types.forEach(t=>g.fillText(t[0],sx(t[1][0]),sy(t[1][1])-t[2]*H/9*1.6-4));
+    g.fillStyle=css('--muted');g.font='11px '+css('--f-mono');g.textAlign='left';g.fillText('UMAP 1 →',8,H-8);
+  }
+
+  /* Harmony simulation (2-D teaching version of the algorithm) */
+  function makeData(){
+    const r=rng(5), C=[[-3,2],[2.5,2.8],[0,-2.5],[3.5,-1.5],[-3.5,-1.8]], pts=[], sh=[2.2,-1.6];
+    for(let t=0;t<C.length;t++)for(let b=0;b<2;b++){const n=t===4&&b===1?30:140;
+      for(let i=0;i<n;i++)pts.push({x:C[t][0]+gauss(r)*.6+(b?sh[0]:0),y:C[t][1]+gauss(r)*.6+(b?sh[1]:0),t,b})}
+    return pts;
+  }
+  function harmony(pts,iters,K=6,theta=1,sigma=1.5){
+    const n=pts.length; let Z=pts.map(p=>[p.x,p.y]); const out=[Z.map(p=>p.slice())];
+    const Nb=[0,0]; pts.forEach(p=>Nb[p.b]++); const Pb=Nb.map(v=>v/n); const r=rng(9);
+    let C=[Z[Math.floor(r()*n)]];
+    while(C.length<K){const d=Z.map(z=>Math.min(...C.map(c=>(z[0]-c[0])**2+(z[1]-c[1])**2)));const s=d.reduce((a,b)=>a+b);let u=r()*s,i=0;for(;i<n;i++){u-=d[i];if(u<=0)break}C.push(Z[Math.min(i,n-1)])}
+    let R=null;
+    for(let it=0;it<iters;it++){
+      for(let inner=0;inner<10;inner++){
+        const O=C.map(()=>[0,0]); if(R)R.forEach((rk,i)=>rk.forEach((v,k)=>O[k][pts[i].b]+=v));
+        const Ek=C.map((_,k)=>O[k][0]+O[k][1]);
+        R=Z.map((z,i)=>{const row=C.map((c,k)=>{let w=Math.exp(-((z[0]-c[0])**2+(z[1]-c[1])**2)/(2*sigma*sigma));
+          if(Ek[k]>0){const E=Ek[k]*Pb[pts[i].b];w*=Math.pow((E+1)/(O[k][pts[i].b]+1),theta)}return w+1e-12});
+          const s=row.reduce((a,b)=>a+b);return row.map(v=>v/s)});
+        C=C.map((_,k)=>{let sw=0,sx=0,sy=0;R.forEach((rr,i)=>{sw+=rr[k];sx+=rr[k]*Z[i][0];sy+=rr[k]*Z[i][1]});return[sx/sw,sy/sw]});
+      }
+      const Z0=Z.map(p=>p.slice());
+      for(let k=0;k<K;k++){const m=[[0,0,0],[0,0,0]],a=[0,0,0];
+        R.forEach((rr,i)=>{const b=pts[i].b,w=rr[k];m[b][0]+=w*Z0[i][0];m[b][1]+=w*Z0[i][1];m[b][2]+=w;a[0]+=w*Z0[i][0];a[1]+=w*Z0[i][1];a[2]+=w});
+        const mu=[a[0]/a[2],a[1]/a[2]];
+        R.forEach((rr,i)=>{const b=pts[i].b;if(m[b][2]<1e-6)return;Z[i][0]-=rr[k]*(m[b][0]/m[b][2]-mu[0]);Z[i][1]-=rr[k]*(m[b][1]/m[b][2]-mu[1])});
+      }
+      out.push(Z.map(p=>p.slice()));
+    }
+    return out;
+  }
+  const hp=makeData(), states=harmony(hp,5), metr={};
+  function metrics(i){ if(metr[i])return metr[i]; const Z=states[i],k=15,r=rng(2);let mix=0,pur=0,q=0;
+    for(let j=0;j<hp.length;j+=4){q++;const d=Z.map((z,m)=>[(z[0]-Z[j][0])**2+(z[1]-Z[j][1])**2,m]).sort((a,b)=>a[0]-b[0]).slice(1,k+1);
+      mix+=d.filter(([_,m])=>hp[m].b!==hp[j].b).length/k; pur+=d.filter(([_,m])=>hp[m].t===hp[j].t).length/k}
+    return metr[i]=[mix/q,pur/q]; }
+  let colourBy='type';
+  const hc=document.getElementById('harm');
+  function drawHarm(){
+    if(!hc.getBoundingClientRect().width)return;
+    const it=+document.getElementById('iter').value, Z=states[it];
+    document.getElementById('itero').textContent=it===0?'0 (uncorrected)':String(it);
+    const {g,W,H}=setup(hc), L=10,T=10;
+    g.fillStyle=css('--plot');g.fillRect(0,0,W,H);
+    const sx=x=>W/2+(x-0.6)*W/13, sy=y=>H/2-(y-0.2)*H/10;
+    const tc=['--accent','--ch-green','--ch-amber','--up','--ch-mag'], bc=['--down','--up'];
+    hp.forEach((p,i)=>{const col=css(colourBy==='type'?tc[p.t]:bc[p.b]);g.fillStyle=col;g.globalAlpha=.75;
+      const x=sx(Z[i][0]),y=sy(Z[i][1]);g.beginPath();
+      if(p.b===0)g.arc(x,y,2.2,0,7);else{g.moveTo(x,y-3);g.lineTo(x+2.8,y+2);g.lineTo(x-2.8,y+2);g.closePath()}g.fill()});
+    g.globalAlpha=1;g.fillStyle=css('--muted');g.font='11px '+css('--f-mono');g.fillText(it===0?'PCA (uncorrected)':'Harmony embedding',L,T+8);
+    const [mx,pu]=metrics(it);
+    const mEl=document.getElementById('mixV'); mEl.textContent=mx.toFixed(2); mEl.style.color=mx>0.3?css('--good'):css('--bad');
+    document.getElementById('purV').textContent=pu.toFixed(2);
+  }
+  document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{colourBy=b.dataset.c;
+    document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
+    document.getElementById('harmCap').textContent=colourBy==='type'?'Shape = batch (● batch 1, ▲ batch 2); colour = cell type. Purple type is rare in batch 2.':'Colour = batch (blue batch 1, orange batch 2). Mixed colours inside each group = good integration.';
+    drawHarm()}));
+  document.getElementById('iter').addEventListener('input',drawHarm);
+
+  function all(){drawUMAP();drawHarm()}
+  all(); let to; addEventListener('resize',()=>{clearTimeout(to);to=setTimeout(all,150)});
+  try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',all)}catch(e){}
+  new MutationObserver(all).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+  document.querySelectorAll('.code button').forEach(b=>b.addEventListener('click',()=>{
+    const pre=b.parentElement.querySelector('pre');const ok=()=>{b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1400)};
+    const sel=()=>{const r=document.createRange();r.selectNodeContents(pre);const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent='Selected';setTimeout(()=>b.textContent='Copy',1400)};
+    try{navigator.clipboard.writeText(pre.innerText).then(ok,sel)}catch(e){sel()}}));
+
+  const toc=document.getElementById('toc'),steps=[...document.querySelectorAll('.step')];
+  let saved={};try{saved=JSON.parse(localStorage.getItem('sc-progress')||'{}')}catch(e){}
+  steps.forEach((s,i)=>{const a=document.createElement('a');a.href='#'+s.id;
+    a.innerHTML='<span>'+String(i+1).padStart(2,'0')+'</span><span>'+s.dataset.title+'</span>';toc.appendChild(a);s._link=a;
+    const cb=s.querySelector('input[type=checkbox]');cb.checked=!!saved[s.id];
+    cb.addEventListener('change',()=>{saved[s.id]=cb.checked;try{localStorage.setItem('sc-progress',JSON.stringify(saved))}catch(e){}upd()})});
+  function upd(){let n=0;steps.forEach(s=>{const d=s.querySelector('input').checked;s._link.classList.toggle('done',d);if(d)n++});
+    document.getElementById('progtxt').textContent=n+' of '+steps.length+' steps done';
+    document.getElementById('progbar').style.width=(100*n/steps.length)+'%'}
+  upd();
+})();
+</script>
+
+</body>
+</html>

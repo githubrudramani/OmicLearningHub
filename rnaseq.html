@@ -1,0 +1,741 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>RNA-seq Learning Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: same lab-notebook system as Module 1 — sticky nav, volcano-plot hero, history timeline → assay types → TMM explainer → numbered limma-voom pipeline → resources. */
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --sunk:#E9EDF2; --ink:#0F1B2A; --muted:#566476; --line:#D8DFE7;
+  --accent:#3446C4; --ch-green:#16865A; --ch-mag:#B52F86; --ch-amber:#A86F00;
+  --good:#16865A; --bad:#B42318; --up:#C2410C; --down:#2563EB; --ns:#9AA6B5;
+  --code-bg:#0E1622; --code-ink:#DCE6F2; --code-dim:#7F90A6; --plot:#FFFFFF; --grid:#E4E9EF;
+  --f-display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --f-body:"Source Sans 3","Segoe UI",system-ui,-apple-system,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0A0F17; --surface:#111925; --sunk:#0D141E; --ink:#E5ECF4; --muted:#93A2B5; --line:#223042;
+  --accent:#8E9CFF; --ch-green:#4CD49A; --ch-mag:#F06DC2; --ch-amber:#F0B547;
+  --good:#4CD49A; --bad:#FF7A6E; --up:#FB923C; --down:#60A5FA; --ns:#5B6878;
+  --code-bg:#070C13; --plot:#0D141E; --grid:#1C2836; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0A0F17; --surface:#111925; --sunk:#0D141E; --ink:#E5ECF4; --muted:#93A2B5; --line:#223042;
+  --accent:#8E9CFF; --ch-green:#4CD49A; --ch-mag:#F06DC2; --ch-amber:#F0B547;
+  --good:#4CD49A; --bad:#FF7A6E; --up:#FB923C; --down:#60A5FA; --ns:#5B6878;
+  --code-bg:#070C13; --plot:#0D141E; --grid:#1C2836; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 17px/1.6 var(--f-body);-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+a{color:var(--accent);text-underline-offset:3px}
+a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.15;margin:0}
+h2{font-size:clamp(1.7rem,3.2vw,2.3rem);font-weight:700;letter-spacing:-.01em}
+h3{font-size:1.2rem;font-weight:700}
+p{margin:0}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.eyebrow{font:600 .74rem/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.prose{max-width:66ch;display:grid;gap:14px}
+.muted{color:var(--muted)}
+code{font-family:var(--f-mono);font-size:.86em;background:var(--sunk);padding:.1em .35em;border-radius:4px}
+
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--surface);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:20px;padding-block:10px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font:700 1.05rem var(--f-display);color:var(--ink);text-decoration:none}
+.brand i{width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 35% 35%,var(--ch-green) 0 22%,transparent 23%),radial-gradient(circle at 68% 60%,var(--ch-mag) 0 20%,transparent 21%),radial-gradient(circle at 40% 72%,var(--ch-amber) 0 14%,transparent 15%),var(--accent);display:block}
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;margin-left:auto}
+.tabs a{font:600 .88rem var(--f-body);color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap}
+.tabs a:hover{color:var(--ink);background:var(--sunk)}
+.modules{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.chip{font:600 .78rem var(--f-mono);padding:5px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:var(--surface);text-decoration:none}
+a.chip:hover{border-color:var(--muted);color:var(--ink)}
+.chip.on{border-color:var(--accent);color:var(--accent)}
+.chip.soon::after{content:" · soon";opacity:.7}
+
+.hero{padding-block:40px 28px}
+.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:36px;align-items:center}
+.hero h1{font-size:clamp(2.2rem,5vw,3.6rem);font-weight:700;letter-spacing:-.02em}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero .lede{font-size:1.15rem;color:var(--muted);max-width:52ch;margin-top:16px}
+.fig{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;max-width:100%}
+.fig canvas{width:100%;aspect-ratio:5/4;display:block}
+.fig figcaption{font:600 .72rem var(--f-mono);color:var(--muted);display:flex;gap:14px;flex-wrap:wrap;margin-top:6px}
+.fig figcaption span{display:flex;align-items:center;gap:5px}
+.fig figcaption b{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+section{padding-block:56px;border-top:1px solid var(--line)}
+.sec-head{display:grid;gap:10px;margin-bottom:28px}
+
+/* timeline */
+.timeline{position:relative;display:grid;gap:0;margin-top:8px}
+.era{display:grid;grid-template-columns:110px 28px minmax(0,1fr);gap:0 14px}
+.era .yr{font:700 1.15rem/1.3 var(--f-display);text-align:right;font-variant-numeric:tabular-nums;padding-top:2px}
+.era .rail{position:relative}
+.era .rail::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;transform:translateX(-50%);background:var(--line)}
+.era .rail i{position:absolute;left:50%;top:8px;width:14px;height:14px;border-radius:50%;transform:translateX(-50%);background:var(--surface);border:3px solid var(--c,var(--accent))}
+.era .body{padding-bottom:26px;display:grid;gap:6px;max-width:72ch}
+.era .body h3{font-size:1.08rem}
+.era .kind{font:600 .68rem var(--f-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--c,var(--accent))}
+.era .body p{color:var(--muted);font-size:.96rem}
+.era:last-child .rail::before{bottom:auto;height:20px}
+
+.flav{margin-top:36px;overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+.flav table,.cmp table,.res-table table{border-collapse:collapse;width:100%;font-size:.93rem}
+.flav table{min-width:820px}
+.flav th,.flav td,.cmp th,.cmp td,.res-table th,.res-table td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+.flav th,.cmp th,.res-table th{font:600 .72rem var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--sunk)}
+.flav tr:last-child td,.cmp tr:last-child td,.res-table tr:last-child td{border-bottom:0}
+.flav td:first-child{font-weight:700;white-space:nowrap}
+
+/* TMM explainer */
+.tmm{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:28px;align-items:start}
+.ctrl{display:grid;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+.ctrl label{display:grid;gap:4px;font-weight:600;font-size:.94rem}
+.ctrl label span{display:flex;justify-content:space-between;gap:8px}
+.ctrl output{font:600 .9rem var(--f-mono);color:var(--accent)}
+.ctrl input[type=range]{width:100%;accent-color:var(--accent)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:600 .86rem var(--f-body);border:0;background:var(--surface);color:var(--muted);padding:7px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.readout{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.readout div{background:var(--sunk);border-radius:8px;padding:10px 12px}
+.readout b{display:block;font:700 1.35rem var(--f-display);font-variant-numeric:tabular-nums}
+.readout small{color:var(--muted);font-size:.8rem}
+.ma-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;min-width:0}
+.ma-wrap canvas{width:100%;aspect-ratio:4/3;display:block}
+.ma-wrap p{font-size:.88rem;color:var(--muted);margin-top:8px}
+.steps-list{margin:0;padding-left:1.2em;display:grid;gap:6px}
+
+.cmp{margin-top:28px;overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+.cmp table{min-width:680px}
+
+/* pipeline */
+.pipe-layout{display:grid;grid-template-columns:240px minmax(0,1fr);gap:32px;align-items:start}
+.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 76px);display:grid;gap:2px;font-size:.9rem}
+.toc .prog{font:600 .78rem var(--f-mono);color:var(--muted);margin-bottom:8px}
+.toc .bar{height:4px;background:var(--sunk);border-radius:2px;overflow:hidden;margin-bottom:12px}
+.toc .bar i{display:block;height:100%;width:0;background:var(--ch-green);transition:width .3s}
+.toc a{display:grid;grid-template-columns:28px 1fr;gap:4px;padding:5px 6px;border-radius:6px;color:var(--muted);text-decoration:none}
+.toc a:hover{background:var(--sunk);color:var(--ink)}
+.toc a.done{color:var(--ch-green)}
+.toc a span:first-child{font:600 .78rem/1.7 var(--f-mono)}
+.steps{display:grid;gap:22px;min-width:0}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px;display:grid;gap:14px;min-width:0;scroll-margin-top:90px}
+.step-head{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:start}
+.num{font:700 1.5rem/1 var(--f-display);color:var(--accent);min-width:2ch;font-variant-numeric:tabular-nums}
+.step-head .kind{font:600 .7rem var(--f-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:4px}
+.done-toggle{display:flex;align-items:center;gap:6px;font:600 .8rem var(--f-body);color:var(--muted);cursor:pointer;white-space:nowrap}
+.done-toggle input{accent-color:var(--ch-green);width:16px;height:16px}
+.step .why{color:var(--muted);max-width:70ch}
+.callout{border-left:3px solid var(--ch-amber);background:color-mix(in srgb,var(--ch-amber) 8%,var(--surface));padding:10px 14px;border-radius:0 6px 6px 0;font-size:.93rem}
+.callout.new{border-color:var(--ch-mag);background:color-mix(in srgb,var(--ch-mag) 7%,var(--surface))}
+.callout.warn{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 7%,var(--surface))}
+.callout b{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+.check{border-left:3px solid var(--ch-green);background:color-mix(in srgb,var(--ch-green) 7%,var(--surface));padding:10px 14px;border-radius:0 6px 6px 0;font-size:.93rem}
+.check b{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;margin-right:6px;color:var(--ch-green)}
+.code{position:relative;background:var(--code-bg);border-radius:8px;min-width:0}
+.code .lang{position:absolute;left:14px;top:9px;font:600 .68rem var(--f-mono);color:var(--code-dim);letter-spacing:.1em;text-transform:uppercase}
+.code button{position:absolute;right:8px;top:6px;font:600 .74rem var(--f-mono);background:transparent;border:1px solid #2A3A50;color:var(--code-ink);padding:3px 9px;border-radius:5px;cursor:pointer}
+.code button:hover{border-color:var(--code-dim)}
+.code pre{margin:0;padding:34px 16px 16px;overflow-x:auto;font:400 .84rem/1.6 var(--f-mono);color:var(--code-ink);tab-size:2}
+.code pre .c{color:var(--code-dim)}
+.out{font:400 .82rem/1.6 var(--f-mono);background:var(--sunk);border-radius:8px;padding:12px 16px;overflow-x:auto;margin:0;white-space:pre;color:var(--ink)}
+.out::before{content:"Output";display:block;font:600 .66rem var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.res-table{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+.res-table table{min-width:420px;font-variant-numeric:tabular-nums}
+.res-table td.n{text-align:right}
+.res-table th.n{text-align:right}
+details.track{border:1px dashed var(--line);border-radius:8px;padding:10px 14px}
+details.track summary{cursor:pointer;font:600 .9rem var(--f-body);color:var(--accent)}
+details.track[open] summary{margin-bottom:10px}
+
+.res-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.res-grid h3{font-size:1rem;margin-bottom:10px}
+.res-grid ul{list-style:none;margin:0;padding:0;display:grid;gap:8px;font-size:.95rem}
+.res-grid li span{display:block;color:var(--muted);font-size:.85rem}
+dl.gloss{display:grid;grid-template-columns:minmax(150px,max-content) 1fr;gap:8px 20px;margin:0;font-size:.95rem}
+dl.gloss dt{font:600 .85rem var(--f-mono);color:var(--accent)}
+dl.gloss dd{margin:0}
+footer{padding-block:32px 48px;border-top:1px solid var(--line);color:var(--muted);font-size:.88rem}
+
+@media (max-width:900px){
+  .hero-grid,.pipe-layout,.tmm{grid-template-columns:1fr}
+  .res-grid{grid-template-columns:1fr 1fr}
+  .toc{position:static;grid-template-columns:1fr 1fr}
+  .toc .prog,.toc .bar{grid-column:1/-1}
+}
+@media (max-width:560px){
+  body{font-size:16px}
+  .res-grid,.toc{grid-template-columns:1fr}
+  .tabs{margin-left:0;width:100%}
+  .step{padding:18px}
+  .step-head{grid-template-columns:auto 1fr}
+  .done-toggle{grid-column:2}
+  .era{grid-template-columns:62px 22px minmax(0,1fr);gap:0 10px}
+  .era .yr{font-size:.95rem}
+  dl.gloss{grid-template-columns:1fr;gap:2px 0}
+  dl.gloss dd{margin-bottom:8px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+html{scroll-behavior:smooth}
+</style>
+</head>
+<body>
+
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="index.html"><i aria-hidden="true"></i>OmicsRun Learn</a>
+    <nav class="tabs" aria-label="Sections">
+      <a href="#evolution">Evolution</a>
+      <a href="#types">Assay types</a>
+      <a href="#tmm">TMM explained</a>
+      <a href="#pipeline">limma-voom pipeline</a>
+      <a href="#resources">Resources</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <p class="eyebrow">Learning hub · Module 2 · Transcriptomics</p>
+        <h1>Bulk RNA-seq with <em>limma-voom</em> and TMM normalisation</h1>
+        <p class="lede">How RNA-seq grew from blots and microarrays into today's single-cell and spatial methods, why normalisation decides your results, and a complete differential-expression analysis you can run on a real public dataset.</p>
+        <div class="modules" aria-label="Learning modules">
+          <a class="chip" href="xenium.html">Spatial · Xenium</a>
+          <span class="chip on">RNA-seq · limma</span>
+          <span class="chip soon">Spatial · Visium HD</span>
+          <span class="chip soon">DNA-seq / WGS</span>
+          <a class="chip" href="scrnaseq.html">scRNA-seq · Harmony</a>
+        </div>
+      </div>
+      <figure class="fig">
+        <canvas id="volcano" aria-label="Example volcano plot: log2 fold change against significance, up-regulated genes in orange, down-regulated in blue"></canvas>
+        <figcaption><span><b style="background:var(--up)"></b>Up</span><span><b style="background:var(--down)"></b>Down</span><span><b style="background:var(--ns)"></b>Not significant</span><span>Simulated · Basal vs LP style contrast</span></figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <!-- EVOLUTION -->
+  <section id="evolution">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Part 1 · History</p>
+        <h2>How RNA-seq evolved</h2>
+        <p class="muted" style="max-width:68ch">Each step changed what a single experiment can measure: one gene, then thousands, then every transcript, then every cell, then every cell in place. The statistics changed with it. limma started on microarrays and was adapted to counts.</p>
+      </div>
+      <div class="timeline">
+        <div class="era" style="--c:var(--muted)"><div class="yr">1977</div><div class="rail"><i></i></div><div class="body"><p class="kind">One gene at a time</p><h3>Northern blot</h3><p>RNA separated on a gel and probed for a single known gene. Slow, low throughput, but the first way to see expression levels directly.</p></div></div>
+        <div class="era" style="--c:var(--ch-amber)"><div class="yr">1995</div><div class="rail"><i></i></div><div class="body"><p class="kind">Thousands of genes</p><h3>Microarrays and SAGE</h3><p>cDNA microarrays (Schena et al.) and SAGE measured thousands of known transcripts at once. Arrays could only detect what was printed on them and lost accuracy at very low or very high expression.</p></div></div>
+        <div class="era" style="--c:var(--ch-amber)"><div class="yr">2004</div><div class="rail"><i></i></div><div class="body"><p class="kind">Statistics</p><h3>limma and empirical Bayes</h3><p>Gordon Smyth's limma "borrowed strength" across genes to stabilise variance estimates when you only have a few replicates. That idea is still at the heart of the pipeline below.</p></div></div>
+        <div class="era" style="--c:var(--accent)"><div class="yr">2008</div><div class="rail"><i></i></div><div class="body"><p class="kind">Sequencing arrives</p><h3>RNA-seq</h3><p>Short-read sequencing of cDNA (Mortazavi et al. in mouse, Nagalakshmi et al. in yeast) counted transcripts directly. It needs no probes, has a wider dynamic range, and finds novel transcripts and splice junctions.</p></div></div>
+        <div class="era" style="--c:var(--accent)"><div class="yr">2010</div><div class="rail"><i></i></div><div class="body"><p class="kind">Count statistics</p><h3>edgeR, DESeq and TMM</h3><p>Counts are not continuous, so new models used the negative binomial distribution. Robinson and Oshlack introduced TMM normalisation, showing that dividing by library size alone gives biased results.</p></div></div>
+        <div class="era" style="--c:var(--ch-mag)"><div class="yr">2009–13</div><div class="rail"><i></i></div><div class="body"><p class="kind">Resolution</p><h3>Single-cell RNA-seq</h3><p>Tang et al. sequenced a single cell's transcriptome in 2009. By 2013 Nature Methods named single-cell sequencing its Method of the Year. The STAR aligner (2013) made fast spliced alignment routine.</p></div></div>
+        <div class="era" style="--c:var(--accent)"><div class="yr">2014</div><div class="rail"><i></i></div><div class="body"><p class="kind">Statistics</p><h3>voom and DESeq2</h3><p>voom (Law et al.) converted counts to log-CPM with precision weights, so limma's linear models could be used on RNA-seq. DESeq2 was published the same year. Both are still standard.</p></div></div>
+        <div class="era" style="--c:var(--ch-mag)"><div class="yr">2015–17</div><div class="rail"><i></i></div><div class="body"><p class="kind">Scale and speed</p><h3>Droplets and pseudo-alignment</h3><p>Drop-seq and inDrop, then the 10x Chromium, profiled thousands of cells per run. kallisto and Salmon quantified transcripts in minutes, without full alignment.</p></div></div>
+        <div class="era" style="--c:var(--ch-green)"><div class="yr">2016–20</div><div class="rail"><i></i></div><div class="body"><p class="kind">Location and length</p><h3>Spatial and long-read RNA</h3><p>Spatial transcriptomics (Ståhl et al., 2016) kept tissue position; Nature Methods made it Method of the Year 2020. Nanopore direct RNA and PacBio Iso-Seq read full-length isoforms. nf-core made pipelines reproducible across clusters and clouds.</p></div></div>
+        <div class="era" style="--c:var(--ch-green)"><div class="yr">2023–26</div><div class="rail"><i></i></div><div class="body"><p class="kind">Now</p><h3>Multi-million cells, isoforms and models</h3><p>Long-read isoform quantification is affordable at scale, single-cell atlases reach tens of millions of cells, and spatial panels now cover thousands of genes. Bulk RNA-seq is still the most common design for comparing conditions, because it is cheap, deep and well understood.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TYPES -->
+  <section id="types">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Part 2 · Choosing an assay</p>
+        <h2>RNA-seq types: advantages and limitations</h2>
+      </div>
+      <div class="flav">
+        <table>
+          <thead><tr><th>Assay</th><th>What it measures</th><th>Advantages</th><th>Limitations</th><th>Typical analysis</th></tr></thead>
+          <tbody>
+            <tr><td>Bulk poly(A) mRNA</td><td>Average expression of coding genes in a sample</td><td>Cheap, deep, mature tooling, easy to replicate</td><td>Averages over cell types; needs intact RNA (RIN ≥ 7)</td><td>limma-voom, edgeR, DESeq2</td></tr>
+            <tr><td>Bulk total RNA (rRNA-depleted)</td><td>Coding and non-coding RNA, including pre-mRNA</td><td>Works on degraded and FFPE RNA; captures lncRNA</td><td>More reads needed; intronic reads complicate counting</td><td>Same as above</td></tr>
+            <tr><td>3′ tag-seq (QuantSeq, BRB-seq)</td><td>One read per transcript near the 3′ end</td><td>Very low cost per sample; good for large screens</td><td>No isoform or splicing information</td><td>limma-voom, edgeR</td></tr>
+            <tr><td>Single-cell / single-nucleus</td><td>Expression in each cell</td><td>Resolves cell types and states</td><td>Sparse counts, dissociation artefacts, higher cost</td><td>Seurat, Scanpy; pseudobulk + limma/edgeR for DE</td></tr>
+            <tr><td>Spatial</td><td>Expression with tissue coordinates</td><td>Keeps neighbourhood context</td><td>Panel limits or bin resolution; expensive</td><td>See Module 1</td></tr>
+            <tr><td>Long-read (PacBio, Nanopore)</td><td>Full-length isoforms; direct RNA can detect modifications</td><td>Isoform-level answers, fusion transcripts</td><td>Lower depth per dollar; tools still maturing</td><td>IsoQuant, bambu, FLAIR + DTU tests</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- TMM -->
+  <section id="tmm">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Part 3 · Concept</p>
+        <h2>Why TMM normalisation matters</h2>
+      </div>
+      <div class="tmm">
+        <div class="prose">
+          <p>A sequencer gives each sample a fixed budget of reads. If a few genes become hugely expressed in one sample, they use up a larger share of that budget, and every other gene gets fewer reads, <strong>even though its real expression did not change</strong>. Dividing by total library size (CPM) does not fix this, so unchanged genes look down-regulated.</p>
+          <p><strong>TMM</strong> (trimmed mean of M-values) assumes most genes are <em>not</em> differentially expressed. For each sample against a reference sample it:</p>
+          <ol class="steps-list">
+            <li>computes each gene's log-ratio <code>M</code> and average abundance <code>A</code>;</li>
+            <li>trims the most extreme 30% of <code>M</code> values and 5% of <code>A</code> values;</li>
+            <li>takes a precision-weighted mean of what is left;</li>
+            <li>turns that into a scaling factor, so the effective library size is <code>lib.size × norm.factor</code>.</li>
+          </ol>
+          <p>Try it: increase the share of strongly up-regulated genes and compare the two modes. With CPM, the cloud of unchanged grey genes slides below zero. TMM moves it back to zero.</p>
+          <p>Now push the slider past about 30%. TMM fails too, because its core assumption (most genes unchanged) no longer holds. Global shifts like this happen in some experiments, such as transcriptional amplification by MYC. They need spike-in controls rather than TMM.</p>
+        </div>
+        <div style="display:grid;gap:16px;min-width:0">
+          <div class="ma-wrap">
+            <canvas id="ma" aria-label="MA plot of simulated genes in sample B versus sample A, showing the effect of normalisation"></canvas>
+            <p>MA plot: x = average log-expression, y = log₂ fold change B vs A. Grey = unchanged genes; magenta = truly up in B. Green dashed line = median of the unchanged genes.</p>
+          </div>
+          <div class="ctrl">
+            <div class="seg" role="group" aria-label="Normalisation method">
+              <button type="button" data-m="cpm" aria-pressed="false">Library size only (CPM)</button>
+              <button type="button" data-m="tmm" aria-pressed="true">TMM</button>
+            </div>
+            <label for="pDE"><span>Genes strongly up in sample B <output id="pDEo">15%</output></span><input type="range" id="pDE" min="0" max="40" step="1" value="15"></label>
+            <label for="fc"><span>Their fold change <output id="fco">8×</output></span><input type="range" id="fc" min="2" max="32" step="1" value="8"></label>
+            <div class="readout">
+              <div><small>Unchanged genes, median log₂FC</small><b id="medM">0.00</b></div>
+              <div><small>TMM factor, B relative to A</small><b id="tmmF">1.00</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cmp">
+        <table>
+          <thead><tr><th>Method</th><th>Normalisation</th><th>Model</th><th>Best when</th></tr></thead>
+          <tbody>
+            <tr><td><strong>limma-voom</strong></td><td>TMM (edgeR)</td><td>Linear model on log-CPM with precision weights</td><td>Complex designs, many samples, fast; strong for gene-set tests</td></tr>
+            <tr><td>edgeR quasi-likelihood</td><td>TMM</td><td>Negative binomial GLM</td><td>Small samples, low counts</td></tr>
+            <tr><td>DESeq2</td><td>Median-of-ratios</td><td>Negative binomial GLM with shrunken fold changes</td><td>Small studies wanting stable fold-change estimates</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- PIPELINE -->
+  <section id="pipeline">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Part 4 · Hands-on tutorial</p>
+        <h2>limma-voom pipeline with TMM normalisation</h2>
+        <p class="muted" style="max-width:74ch">Uses the mouse mammary gland dataset GSE63310 from <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4937821/" target="_blank" rel="noopener">Law et al., "RNA-seq analysis is easy as 1-2-3"</a>: 9 samples from three cell populations (basal, luminal progenitor LP, mature luminal ML) sequenced on three lanes. Outputs shown are the values reported in that paper. Newer options are flagged along the way. Progress is saved in this browser.</p>
+      </div>
+
+      <div class="pipe-layout">
+        <nav class="toc" aria-label="Pipeline steps" id="toc">
+          <p class="prog" id="progtxt">0 of 12 steps done</p>
+          <div class="bar"><i id="progbar"></i></div>
+        </nav>
+
+        <div class="steps">
+
+          <article class="step" id="s1" data-title="Set up R">
+            <div class="step-head"><span class="num">01</span><div><p class="kind">Setup</p><h3>Install Bioconductor packages</h3></div><label class="done-toggle"><input type="checkbox" id="d-s1">Done</label></div>
+            <p class="why">limma does the modelling, edgeR provides the DGEList container, filtering and TMM, Glimma makes interactive plots, and msigdbr supplies gene sets.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>install.packages(c("BiocManager", "R.utils", "ggplot2", "pheatmap", "msigdbr"))
+BiocManager::install(c("limma", "edgeR", "Glimma", "org.Mm.eg.db"))
+
+library(limma); library(edgeR); library(Glimma)
+library(org.Mm.eg.db); library(ggplot2); library(pheatmap)</pre></div>
+          </article>
+
+          <article class="step" id="s2" data-title="FASTQ to counts">
+            <div class="step-head"><span class="num">02</span><div><p class="kind">Upstream</p><h3>From FASTQ files to a count matrix</h3></div><label class="done-toggle"><input type="checkbox" id="d-s2">Done</label></div>
+            <p class="why">limma-voom starts from a gene-by-sample table of raw read counts. For your own data, produce it with nf-core/rnaseq: trimming, STAR alignment, Salmon quantification and full QC (FastQC, RSeQC, MultiQC) in one command. It runs locally, on a cluster, or on AWS.</p>
+            <div class="code"><span class="lang">Shell</span><button type="button">Copy</button><pre><span class="c"># samplesheet.csv: sample,fastq_1,fastq_2,strandedness</span>
+nextflow run nf-core/rnaseq -r 3.19.0 \
+  -profile docker \
+  --input samplesheet.csv \
+  --genome GRCm39 \
+  --aligner star_salmon \
+  --outdir results
+
+<span class="c"># counts for limma: results/star_salmon/salmon.merged.gene_counts.tsv</span>
+<span class="c"># on AWS: add  -profile awsbatch  or launch the same workflow on AWS HealthOmics</span></pre></div>
+            <div class="callout warn"><b>Don't</b>Never feed TPM or FPKM values into limma or edgeR. They need raw counts. With Salmon output, import via <code>tximport(..., countsFromAbundance = "lengthScaledTPM")</code>, which gives count-scale values that limma-voom accepts.</div>
+            <div class="callout"><b>Version</b>Pin the pipeline with <code>-r</code> for reproducibility. Check the latest release on the nf-core website before you run.</div>
+          </article>
+
+          <article class="step" id="s3" data-title="Load counts">
+            <div class="step-head"><span class="num">03</span><div><p class="kind">Import</p><h3>Download GSE63310 and build a DGEList</h3></div><label class="done-toggle"><input type="checkbox" id="d-s3">Done</label></div>
+            <p class="why">A <code>DGEList</code> holds three things together: the counts, the sample table (library size, group, normalisation factor) and the gene annotation.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>url &lt;- "https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE63310&amp;format=file"
+download.file(url, destfile = "GSE63310_RAW.tar", mode = "wb")
+untar("GSE63310_RAW.tar", exdir = ".")
+
+files &lt;- c("GSM1545535_10_6_5_11.txt", "GSM1545536_9_6_5_11.txt",
+           "GSM1545538_purep53.txt",   "GSM1545539_JMS8-2.txt",
+           "GSM1545540_JMS8-3.txt",    "GSM1545541_JMS8-4.txt",
+           "GSM1545542_JMS8-5.txt",    "GSM1545544_JMS9-P7c.txt",
+           "GSM1545545_JMS9-P8c.txt")
+for (f in paste0(files, ".gz")) R.utils::gunzip(f, overwrite = TRUE)
+
+x &lt;- readDGE(files, columns = c(1, 3))      <span class="c"># col 1 = Entrez ID, col 3 = count</span>
+colnames(x) &lt;- substring(colnames(x), 12)  <span class="c"># drop the GSM prefix</span>
+dim(x)</pre></div>
+            <pre class="out">[1] 27179     9</pre>
+          </article>
+
+          <article class="step" id="s4" data-title="Samples &amp; genes">
+            <div class="step-head"><span class="num">04</span><div><p class="kind">Metadata</p><h3>Add sample groups, batch and gene annotation</h3></div><label class="done-toggle"><input type="checkbox" id="d-s4">Done</label></div>
+            <p class="why">The cell type is the biology. The sequencing lane is a technical batch you will put in the model. Gene symbols make results readable.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>group &lt;- factor(c("LP","ML","Basal","Basal","ML","LP","Basal","ML","LP"))
+lane  &lt;- factor(rep(c("L004", "L006", "L008"), c(3, 4, 2)))
+x$samples$group &lt;- group
+x$samples$lane  &lt;- lane
+
+genes &lt;- AnnotationDbi::select(org.Mm.eg.db, keys = rownames(x),
+                               columns = c("SYMBOL", "GENENAME"), keytype = "ENTREZID")
+genes &lt;- genes[!duplicated(genes$ENTREZID), ]
+x$genes &lt;- genes
+x$samples</pre></div>
+            <div class="callout"><b>Design check</b>Every group appears on more than one lane, so lane and cell type are not confounded. If a batch matched a group exactly, no statistical method could separate them.</div>
+          </article>
+
+          <article class="step" id="s5" data-title="Filter low counts">
+            <div class="step-head"><span class="num">05</span><div><p class="kind">Filtering</p><h3>Remove lowly expressed genes</h3></div><label class="done-toggle"><input type="checkbox" id="d-s5">Done</label></div>
+            <p class="why">Genes with almost no reads cannot be tested and add noise to the mean-variance trend. <code>filterByExpr()</code> keeps genes with enough counts in at least as many samples as the smallest group, scaled to library size.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>table(rowSums(x$counts == 0) == 9)            <span class="c"># genes with zero counts everywhere</span>
+
+keep &lt;- filterByExpr(x, group = group)
+x &lt;- x[keep, , keep.lib.sizes = FALSE]        <span class="c"># recalculate library sizes</span>
+dim(x)
+
+<span class="c"># density of log-CPM before vs after filtering</span>
+lcpm &lt;- cpm(x, log = TRUE)
+plotDensities(lcpm, legend = FALSE, main = "After filtering")</pre></div>
+            <pre class="out">[1] 16624     9</pre>
+          </article>
+
+          <article class="step" id="s6" data-title="TMM normalisation">
+            <div class="step-head"><span class="num">06</span><div><p class="kind">Normalisation</p><h3>TMM normalisation</h3></div><label class="done-toggle"><input type="checkbox" id="d-s6">Done</label></div>
+            <p class="why"><code>calcNormFactors()</code> computes one factor per sample. It does not change the counts; it stores factors that every downstream function (cpm, voom) uses automatically. Factors are scaled so they multiply to 1.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>x &lt;- calcNormFactors(x, method = "TMM")
+round(x$samples$norm.factors, 3)
+x$samples$lib.size * x$samples$norm.factors   <span class="c"># effective library sizes</span>
+
+<span class="c"># teaching exercise: distort two samples and watch TMM correct them</span>
+x2 &lt;- x
+x2$samples$norm.factors &lt;- 1
+x2$counts[, 1] &lt;- ceiling(x2$counts[, 1] * 0.05)
+x2$counts[, 2] &lt;- x2$counts[, 2] * 5
+par(mfrow = c(1, 2))
+boxplot(cpm(x2, log = TRUE), las = 2, main = "Unnormalised")
+x2 &lt;- calcNormFactors(x2)
+boxplot(cpm(x2, log = TRUE), las = 2, main = "TMM-normalised")</pre></div>
+            <pre class="out">[1] 0.894 1.025 1.046 1.046 1.016 0.922 0.996 1.086 0.984</pre>
+            <div class="check"><b>Read it</b>These factors are all close to 1, so composition bias is mild here. Factors outside about 0.5–2 point to a problem sample, very different RNA composition, or contamination. Investigate before you continue.</div>
+            <div class="callout new"><b>Newer</b>For data with many zeros (low-input or degraded samples), <code>method = "TMMwsp"</code> (TMM with singleton pairing) is more stable. In edgeR 4, <code>normLibSizes()</code> is the new name for <code>calcNormFactors()</code>; both work.</div>
+          </article>
+
+          <article class="step" id="s7" data-title="Explore samples">
+            <div class="step-head"><span class="num">07</span><div><p class="kind">Exploration</p><h3>Check sample relationships with MDS</h3></div><label class="done-toggle"><input type="checkbox" id="d-s7">Done</label></div>
+            <p class="why">Before testing anything, see whether samples group by biology. The first dimension should separate cell types; if they group by lane instead, the batch effect is strong.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>lcpm &lt;- cpm(x, log = TRUE)                       <span class="c"># now TMM-aware</span>
+col.group &lt;- c("#C2410C", "#2563EB", "#16865A")[as.integer(group)]
+par(mfrow = c(1, 2))
+plotMDS(lcpm, labels = group, col = col.group, main = "A. Cell type")
+plotMDS(lcpm, labels = lane, dim.plot = c(3, 4), main = "B. Lane (dims 3 & 4)")
+
+glimmaMDS(x, groups = x$samples[, c("group", "lane")])   <span class="c"># interactive HTML</span></pre></div>
+          </article>
+
+          <article class="step" id="s8" data-title="Design &amp; contrasts">
+            <div class="step-head"><span class="num">08</span><div><p class="kind">Model</p><h3>Design matrix and contrasts</h3></div><label class="done-toggle"><input type="checkbox" id="d-s8">Done</label></div>
+            <p class="why">The design has one column per cell type (no intercept) plus lane as a batch term. Contrasts then name the comparisons you care about.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>design &lt;- model.matrix(~ 0 + group + lane)
+colnames(design) &lt;- gsub("group", "", colnames(design))
+
+contr.matrix &lt;- makeContrasts(
+  BasalvsLP = Basal - LP,
+  BasalvsML = Basal - ML,
+  LPvsML    = LP - ML,
+  levels = colnames(design))
+contr.matrix</pre></div>
+            <div class="callout warn"><b>Batch</b>Model batch in the design, as here. <code>removeBatchEffect()</code> is only for plots and heatmaps; never test DE on batch-removed values.</div>
+          </article>
+
+          <article class="step" id="s9" data-title="voom → lmFit → eBayes">
+            <div class="step-head"><span class="num">09</span><div><p class="kind">Core analysis</p><h3>voom, linear model and empirical Bayes</h3></div><label class="done-toggle"><input type="checkbox" id="d-s9">Done</label></div>
+            <p class="why">voom converts counts to log-CPM using the TMM-adjusted library sizes. It then estimates how variance depends on expression level and gives each observation a precision weight. limma fits a weighted linear model per gene, and eBayes shrinks gene variances towards a common trend.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>v &lt;- voom(x, design, plot = TRUE)          <span class="c"># mean–variance trend should be smooth</span>
+vfit &lt;- lmFit(v, design)
+vfit &lt;- contrasts.fit(vfit, contrasts = contr.matrix)
+efit &lt;- eBayes(vfit)
+plotSA(efit, main = "Final model: mean-variance trend")
+summary(decideTests(efit))</pre></div>
+            <div class="res-table"><table>
+              <thead><tr><th>FDR 5%</th><th class="n">Basal vs LP</th><th class="n">Basal vs ML</th><th class="n">LP vs ML</th></tr></thead>
+              <tbody><tr><td>Down</td><td class="n">4,648</td><td class="n">4,927</td><td class="n">3,135</td></tr><tr><td>Not significant</td><td class="n">7,113</td><td class="n">7,026</td><td class="n">10,972</td></tr><tr><td>Up</td><td class="n">4,863</td><td class="n">4,671</td><td class="n">2,517</td></tr></tbody>
+            </table></div>
+            <details class="track">
+              <summary>Variations for other designs</summary>
+              <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre><span class="c"># some samples noisier than others: down-weight them</span>
+v &lt;- voomWithQualityWeights(x, design, plot = TRUE)
+
+<span class="c"># repeated samples from the same patient (paired / blocked design)</span>
+corfit &lt;- duplicateCorrelation(v, design, block = patient)
+vfit &lt;- lmFit(v, design, block = patient, correlation = corfit$consensus)
+
+<span class="c"># newer one-step alternative in edgeR (handles zeros better)</span>
+vfit &lt;- voomLmFit(x, design, sample.weights = TRUE, plot = TRUE)
+
+<span class="c"># mixed models with several random effects: variancePartition::dream()</span></pre></div>
+            </details>
+          </article>
+
+          <article class="step" id="s10" data-title="DE results &amp; plots">
+            <div class="step-head"><span class="num">10</span><div><p class="kind">Results</p><h3>Rank genes, apply a fold-change threshold and plot</h3></div><label class="done-toggle"><input type="checkbox" id="d-s10">Done</label></div>
+            <p class="why">With thousands of significant genes, focus on large effects. <code>treat()</code> tests whether the fold change is <em>above</em> a threshold, which is stricter and more honest than filtering the results by log fold change after the test.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>tfit &lt;- treat(vfit, lfc = 1)                 <span class="c"># |log2FC| &gt; 1, i.e. more than 2-fold</span>
+dt &lt;- decideTests(tfit)
+summary(dt)
+basal.vs.lp &lt;- topTreat(tfit, coef = 1, n = Inf)
+head(basal.vs.lp[, c("SYMBOL", "logFC", "AveExpr", "adj.P.Val")])
+
+plotMD(tfit, column = 1, status = dt[, 1], main = colnames(tfit)[1], xlim = c(-8, 13))
+glimmaMA(tfit, dge = x, coef = 1)              <span class="c"># interactive MD plot + per-gene counts</span>
+
+<span class="c"># volcano plot</span>
+tt &lt;- topTable(efit, coef = "BasalvsLP", n = Inf)
+tt$status &lt;- ifelse(tt$adj.P.Val &lt; 0.05 &amp; tt$logFC &gt; 1, "Up",
+             ifelse(tt$adj.P.Val &lt; 0.05 &amp; tt$logFC &lt; -1, "Down", "NS"))
+ggplot(tt, aes(logFC, -log10(P.Value), colour = status)) +
+  geom_point(size = 0.6) +
+  scale_colour_manual(values = c(Up = "#C2410C", Down = "#2563EB", NS = "grey70")) +
+  theme_minimal()
+
+<span class="c"># heatmap of the top 100 genes</span>
+top &lt;- rownames(basal.vs.lp)[1:100]
+pheatmap(lcpm[top, ], scale = "row", labels_row = x$genes[top, "SYMBOL"],
+         annotation_col = data.frame(group = group, row.names = colnames(lcpm)),
+         show_rownames = FALSE)</pre></div>
+            <div class="res-table"><table>
+              <thead><tr><th>treat, |log₂FC| &gt; 1</th><th class="n">Basal vs LP</th><th class="n">Basal vs ML</th><th class="n">LP vs ML</th></tr></thead>
+              <tbody><tr><td>Down</td><td class="n">1,632</td><td class="n">1,777</td><td class="n">224</td></tr><tr><td>Not significant</td><td class="n">12,976</td><td class="n">12,790</td><td class="n">16,210</td></tr><tr><td>Up</td><td class="n">2,016</td><td class="n">2,057</td><td class="n">190</td></tr></tbody>
+            </table></div>
+          </article>
+
+          <article class="step" id="s11" data-title="Gene set testing">
+            <div class="step-head"><span class="num">11</span><div><p class="kind">Biology</p><h3>Gene set testing with camera</h3></div><label class="done-toggle"><input type="checkbox" id="d-s11">Done</label></div>
+            <p class="why"><code>camera()</code> tests whether a whole pathway moves together, while accounting for correlation between genes in the set. That correlation is what makes many simpler enrichment tests too optimistic. Here we use MSigDB Hallmark sets mapped to mouse.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>library(msigdbr)
+h &lt;- msigdbr(species = "Mus musculus", collection = "H")  <span class="c"># older msigdbr: category = "H"</span>
+idcol &lt;- intersect(c("ncbi_gene", "entrez_gene"), names(h))[1]
+sets &lt;- split(as.character(h[[idcol]]), h$gs_name)
+idx  &lt;- ids2indices(sets, id = rownames(v))
+
+cam &lt;- camera(v, idx, design, contrast = contr.matrix[, "BasalvsLP"])
+head(cam, 10)
+
+barcodeplot(efit$t[, "BasalvsLP"],
+            index = idx[["HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION"]],
+            main = "Basal vs LP: EMT hallmark")</pre></div>
+            <div class="callout"><b>Also</b>Use <code>fry()</code> for a few hand-picked sets, and <code>goana()</code> / <code>kegga()</code> for over-representation of your DE gene list.</div>
+          </article>
+
+          <article class="step" id="s12" data-title="Report &amp; share">
+            <div class="step-head"><span class="num">12</span><div><p class="kind">Deliver</p><h3>Export results and record the analysis</h3></div><label class="done-toggle"><input type="checkbox" id="d-s12">Done</label></div>
+            <p class="why">Save complete tables (not just the top hits), interactive plots, and the session details. Anyone should be able to rerun your analysis from these files.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>for (k in colnames(contr.matrix)) {
+  write.csv(topTreat(tfit, coef = k, n = Inf), paste0("DE_", k, "_treat.csv"))
+}
+write.fit(tfit, dt, file = "all_contrasts.txt")
+saveRDS(list(dge = x, voom = v, fit = tfit), "limma_voom_results.rds")
+writeLines(capture.output(sessionInfo()), "sessionInfo.txt")</pre></div>
+            <div class="check"><b>Report</b>Genes before and after filtering · normalisation method and factors · design formula and contrasts · FDR and fold-change thresholds · gene-set collection and version · package versions.</div>
+          </article>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="resources">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Part 5 · Go further</p>
+        <h2>Resources and glossary</h2>
+      </div>
+      <div class="res-grid">
+        <div>
+          <h3>Core reading</h3>
+          <ul>
+            <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4937821/" target="_blank" rel="noopener">Law et al. · RNA-seq analysis is easy as 1-2-3</a><span>The workflow this tutorial follows</span></li>
+            <li><a href="https://bioconductor.org/packages/limma/" target="_blank" rel="noopener">limma on Bioconductor</a><span>User's guide with many design examples</span></li>
+            <li><a href="https://bioconductor.org/packages/edgeR/" target="_blank" rel="noopener">edgeR on Bioconductor</a><span>TMM, filterByExpr, voomLmFit</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Pipelines</h3>
+          <ul>
+            <li><a href="https://nf-co.re/rnaseq" target="_blank" rel="noopener">nf-core/rnaseq</a><span>FASTQ → counts with full QC; runs on AWS</span></li>
+            <li><a href="https://nf-co.re/differentialabundance" target="_blank" rel="noopener">nf-core/differentialabundance</a><span>Automated limma / DESeq2 reports</span></li>
+            <li><a href="https://bioconductor.org/packages/Glimma/" target="_blank" rel="noopener">Glimma</a><span>Interactive MDS, MA and volcano plots</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Practice data</h3>
+          <ul>
+            <li><a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE63310" target="_blank" rel="noopener">GEO · GSE63310</a><span>Mouse mammary cell populations</span></li>
+            <li><a href="https://www.gsea-msigdb.org/gsea/msigdb" target="_blank" rel="noopener">MSigDB</a><span>Gene set collections</span></li>
+            <li><a href="xenium.html">Module 1 · Xenium</a><span>Spatial omics primer and pipeline</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 style="margin:40px 0 16px">Glossary</h3>
+      <dl class="gloss">
+        <dt>CPM</dt><dd>Counts per million: counts divided by library size × 10⁶. With TMM, the effective (normalised) library size is used.</dd>
+        <dt>TMM</dt><dd>Trimmed mean of M-values: a scaling factor that corrects for differences in RNA composition between samples.</dd>
+        <dt>M / A values</dt><dd>M is the log₂ ratio between two samples; A is the average log₂ expression. Together they form an MA plot.</dd>
+        <dt>voom</dt><dd>Variance modelling at the observation level: turns counts into log-CPM with precision weights for limma.</dd>
+        <dt>Empirical Bayes</dt><dd>Shrinks each gene's variance estimate towards a common trend, giving stable tests with few replicates.</dd>
+        <dt>Contrast</dt><dd>A named comparison between model coefficients, for example Basal − LP.</dd>
+        <dt>FDR</dt><dd>False discovery rate: the expected share of false positives among genes called significant (Benjamini–Hochberg).</dd>
+        <dt>treat</dt><dd>Tests whether the fold change exceeds a threshold, not just whether it differs from zero.</dd>
+      </dl>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">Module 2 of the OmicsRun learning hub. Outputs shown are from Law et al. (F1000Research, 2016); your numbers may differ slightly with newer package and annotation versions.</div>
+</footer>
+
+<script>
+(function(){
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  function rng(seed){let s=seed;return()=>{s=(s*16807)%2147483647;return s/2147483647}}
+  function gauss(r){let u=0,v=0;while(!u)u=r();while(!v)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+  function setup(cv){const b=cv.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);cv.width=b.width*d;cv.height=b.height*d;const g=cv.getContext('2d');g.scale(d,d);return{g,W:b.width,H:b.height}}
+
+  /* volcano hero */
+  const vc=document.getElementById('volcano');
+  function drawVolcano(){
+    if(!vc.getBoundingClientRect().width) return;
+    const {g,W,H}=setup(vc), r=rng(11), L=36,B=28,T=8,R=8;
+    g.fillStyle=css('--plot');g.fillRect(0,0,W,H);
+    const sx=x=>L+(x+8)/16*(W-L-R), sy=y=>H-B-y/30*(H-B-T);
+    g.strokeStyle=css('--grid');g.lineWidth=1;g.fillStyle=css('--muted');g.font='11px '+css('--f-mono');
+    for(let x=-8;x<=8;x+=4){g.beginPath();g.moveTo(sx(x),T);g.lineTo(sx(x),H-B);g.stroke();g.textAlign='center';g.fillText(x,sx(x),H-B+16)}
+    for(let y=0;y<=30;y+=10){g.beginPath();g.moveTo(L,sy(y));g.lineTo(W-R,sy(y));g.stroke();g.textAlign='right';g.fillText(y,L-6,sy(y)+4)}
+    const up=css('--up'),dn=css('--down'),ns=css('--ns');
+    for(let i=0;i<2600;i++){
+      const de=r()<0.3; let lfc=de?gauss(r)*2.6:gauss(r)*0.45; lfc=Math.max(-7.8,Math.min(7.8,lfc));
+      let p=de?Math.abs(lfc)*(2.2+r()*2)+r()*2:Math.abs(gauss(r))*1.1; p=Math.min(29,p);
+      const sig=p>1.3&&Math.abs(lfc)>1;
+      g.fillStyle=sig?(lfc>0?up:dn):ns;g.globalAlpha=sig?.8:.5;
+      g.beginPath();g.arc(sx(lfc),sy(p),1.6,0,7);g.fill();
+    }
+    g.globalAlpha=1;g.strokeStyle=css('--muted');g.setLineDash([4,4]);
+    [[-1,0],[1,0]].forEach(([x])=>{g.beginPath();g.moveTo(sx(x),T);g.lineTo(sx(x),H-B);g.stroke()});
+    g.beginPath();g.moveTo(L,sy(1.3));g.lineTo(W-R,sy(1.3));g.stroke();g.setLineDash([]);
+    g.fillStyle=css('--muted');g.textAlign='center';g.fillText('log₂ fold change',(L+W)/2,H-2);
+    g.save();g.translate(11,(T+H-B)/2);g.rotate(-Math.PI/2);g.fillText('−log₁₀ P',0,0);g.restore();
+  }
+
+  /* TMM demo */
+  const N=2500, base=[], noiseA=[], noiseB=[], ord=[];
+  (function(){const r=rng(42);for(let i=0;i<N;i++){base.push(Math.exp(gauss(r)*1.6+3.2));noiseA.push(gauss(r));noiseB.push(gauss(r));ord.push(r())}})();
+  let mode='tmm';
+  function simulate(p,fc){
+    const de=ord.map(o=>o<p);
+    const muA=base.map((m,i)=>m*Math.exp(0.15*noiseA[i]));
+    const muB=base.map((m,i)=>m*(de[i]?fc:1)*Math.exp(0.15*noiseB[i]));
+    const D=2e7, sA=muA.reduce((a,b)=>a+b,0), sB=muB.reduce((a,b)=>a+b,0);
+    const yA=muA.map(m=>Math.round(m*D/sA/50)), yB=muB.map(m=>Math.round(m*D/sB/50));
+    const NA=yA.reduce((a,b)=>a+b,0), NB=yB.reduce((a,b)=>a+b,0);
+    const pts=[];
+    for(let i=0;i<N;i++){ if(yA[i]>0&&yB[i]>0){
+      const M=Math.log2((yB[i]/NB)/(yA[i]/NA)), A=0.5*Math.log2((yB[i]/NB)*(yA[i]/NA));
+      const w=1/((NA-yA[i])/(NA*yA[i])+(NB-yB[i])/(NB*yB[i]));
+      pts.push({M,A,w,de:de[i]});
+    }}
+    // TMM: trim 30% on M, 5% on A, weighted mean
+    const n=pts.length, rk=(arr,k)=>{const idx=arr.map((v,i)=>[v,i]).sort((a,b)=>a[0]-b[0]);const out=new Array(n);idx.forEach(([v,i],j)=>out[i]=j+1);return out};
+    const rM=rk(pts.map(q=>q.M)), rA=rk(pts.map(q=>q.A));
+    const loM=Math.floor(n*.3)+1, hiM=n+1-loM, loA=Math.floor(n*.05)+1, hiA=n+1-loA;
+    let sw=0,swm=0;
+    pts.forEach((q,i)=>{if(rM[i]>=loM&&rM[i]<=hiM&&rA[i]>=loA&&rA[i]<=hiA){sw+=q.w;swm+=q.w*q.M}});
+    const tmm=swm/sw;
+    return {pts,tmm};
+  }
+  const ma=document.getElementById('ma');
+  function drawMA(){
+    if(!ma.getBoundingClientRect().width) return;
+    const p=+document.getElementById('pDE').value/100, fc=+document.getElementById('fc').value;
+    document.getElementById('pDEo').textContent=Math.round(p*100)+'%';
+    document.getElementById('fco').textContent=fc+'×';
+    const {pts,tmm}=simulate(p,fc);
+    const shift = mode==='tmm'?tmm:0;
+    const {g,W,H}=setup(ma), L=34,B=28,T=8,R=8;
+    g.fillStyle=css('--plot');g.fillRect(0,0,W,H);
+    const xmin=-19,xmax=-4, ymin=-6, ymax=7;
+    const sx=x=>L+(x-xmin)/(xmax-xmin)*(W-L-R), sy=y=>T+(ymax-y)/(ymax-ymin)*(H-B-T);
+    g.strokeStyle=css('--grid');g.fillStyle=css('--muted');g.font='11px '+css('--f-mono');g.lineWidth=1;
+    for(let y=-6;y<=6;y+=2){g.beginPath();g.moveTo(L,sy(y));g.lineTo(W-R,sy(y));g.stroke();g.textAlign='right';g.fillText(y,L-6,sy(y)+4)}
+    for(let x=-18;x<=-6;x+=4){g.textAlign='center';g.fillText(x,sx(x),H-B+16)}
+    g.strokeStyle=css('--muted');g.beginPath();g.moveTo(L,sy(0));g.lineTo(W-R,sy(0));g.stroke();
+    const ns=css('--ns'), mg=css('--ch-mag');
+    const nonde=[];
+    pts.forEach(q=>{const m=q.M-shift; if(!q.de) nonde.push(m);
+      g.fillStyle=q.de?mg:ns; g.globalAlpha=q.de?.75:.5;
+      g.beginPath();g.arc(sx(Math.max(xmin,Math.min(xmax,q.A))),sy(Math.max(ymin,Math.min(ymax,m))),1.5,0,7);g.fill()});
+    g.globalAlpha=1;
+    nonde.sort((a,b)=>a-b); const med=nonde.length?nonde[Math.floor(nonde.length/2)]:0;
+    g.strokeStyle=css('--ch-green');g.lineWidth=2;g.setLineDash([6,4]);
+    g.beginPath();g.moveTo(L,sy(med));g.lineTo(W-R,sy(med));g.stroke();g.setLineDash([]);
+    g.fillStyle=css('--muted');g.textAlign='center';g.fillText('A (average log₂ expression)',(L+W)/2,H-2);
+    g.save();g.translate(11,(T+H-B)/2);g.rotate(-Math.PI/2);g.fillText('M (log₂ B / A)',0,0);g.restore();
+    const mEl=document.getElementById('medM'); mEl.textContent=(med>=0?'+':'')+med.toFixed(2);
+    mEl.style.color=Math.abs(med)>0.15?css('--bad'):css('--good');
+    document.getElementById('tmmF').textContent=Math.pow(2,tmm).toFixed(2);
+  }
+  document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{
+    mode=b.dataset.m; document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); drawMA()}));
+  ['pDE','fc'].forEach(id=>document.getElementById(id).addEventListener('input',drawMA));
+
+  function all(){drawVolcano();drawMA()}
+  all(); let to; addEventListener('resize',()=>{clearTimeout(to);to=setTimeout(all,150)});
+  try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',all)}catch(e){}
+  new MutationObserver(all).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+  /* copy */
+  document.querySelectorAll('.code button').forEach(b=>b.addEventListener('click',()=>{
+    const pre=b.parentElement.querySelector('pre'); const ok=()=>{b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1400)};
+    const sel=()=>{const r=document.createRange();r.selectNodeContents(pre);const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent='Selected';setTimeout(()=>b.textContent='Copy',1400)};
+    try{navigator.clipboard.writeText(pre.innerText).then(ok,sel)}catch(e){sel()}
+  }));
+
+  /* toc + progress */
+  const toc=document.getElementById('toc'), steps=[...document.querySelectorAll('.step')];
+  let saved={}; try{saved=JSON.parse(localStorage.getItem('rnaseq-progress')||'{}')}catch(e){}
+  steps.forEach((s,i)=>{
+    const a=document.createElement('a'); a.href='#'+s.id;
+    a.innerHTML='<span>'+String(i+1).padStart(2,'0')+'</span><span>'+s.dataset.title+'</span>';
+    toc.appendChild(a); s._link=a;
+    const cb=s.querySelector('input[type=checkbox]'); cb.checked=!!saved[s.id];
+    cb.addEventListener('change',()=>{saved[s.id]=cb.checked;try{localStorage.setItem('rnaseq-progress',JSON.stringify(saved))}catch(e){} upd()});
+  });
+  function upd(){let n=0;steps.forEach(s=>{const d=s.querySelector('input').checked;s._link.classList.toggle('done',d);if(d)n++});
+    document.getElementById('progtxt').textContent=n+' of '+steps.length+' steps done';
+    document.getElementById('progbar').style.width=(100*n/steps.length)+'%'}
+  upd();
+})();
+</script>
+
+</body>
+</html>

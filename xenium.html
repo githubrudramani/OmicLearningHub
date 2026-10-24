@@ -1,0 +1,785 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Xenium Learning Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a lab-notebook site — sticky module nav, fluorescence "slide" hero, then primer → platforms → numbered pipeline → trends → resources.
+   Channel colours (DAPI / FITC / Cy5 / Cy3) double as the page accents. */
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --sunk:#E9EDF2; --ink:#0F1B2A; --muted:#566476; --line:#D8DFE7;
+  --accent:#3446C4;      /* DAPI */
+  --ch-green:#16865A;    /* FITC */
+  --ch-mag:#B52F86;      /* Cy5 */
+  --ch-amber:#A86F00;    /* Cy3 */
+  --good:#16865A; --warn:#A86F00; --bad:#B42318;
+  --code-bg:#0E1622; --code-ink:#DCE6F2; --code-dim:#7F90A6;
+  --slide:#060A11;
+  --f-display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Source Sans 3", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0A0F17; --surface:#111925; --sunk:#0D141E; --ink:#E5ECF4; --muted:#93A2B5; --line:#223042;
+  --accent:#8E9CFF; --ch-green:#4CD49A; --ch-mag:#F06DC2; --ch-amber:#F0B547;
+  --good:#4CD49A; --warn:#F0B547; --bad:#FF7A6E;
+  --code-bg:#070C13; --code-ink:#DCE6F2; --code-dim:#7F90A6; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0A0F17; --surface:#111925; --sunk:#0D141E; --ink:#E5ECF4; --muted:#93A2B5; --line:#223042;
+  --accent:#8E9CFF; --ch-green:#4CD49A; --ch-mag:#F06DC2; --ch-amber:#F0B547;
+  --good:#4CD49A; --warn:#F0B547; --bad:#FF7A6E;
+  --code-bg:#070C13; --code-ink:#DCE6F2; --code-dim:#7F90A6; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 17px/1.6 var(--f-body);-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+a{color:var(--accent);text-underline-offset:3px}
+a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.15;margin:0}
+h2{font-size:clamp(1.7rem,3.2vw,2.3rem);font-weight:700;letter-spacing:-.01em}
+h3{font-size:1.2rem;font-weight:700}
+p{margin:0}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.eyebrow{font:600 .74rem/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.prose{max-width:66ch;display:grid;gap:14px}
+.muted{color:var(--muted)}
+code{font-family:var(--f-mono);font-size:.86em;background:var(--sunk);padding:.1em .35em;border-radius:4px}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--surface);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:20px;padding-block:10px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font:700 1.05rem var(--f-display);color:var(--ink);text-decoration:none}
+.brand i{width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 35% 35%,var(--ch-green) 0 22%,transparent 23%),radial-gradient(circle at 68% 60%,var(--ch-mag) 0 20%,transparent 21%),radial-gradient(circle at 40% 72%,var(--ch-amber) 0 14%,transparent 15%),var(--accent);display:block}
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;margin-left:auto}
+.tabs a{font:600 .88rem var(--f-body);color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap}
+.tabs a:hover{color:var(--ink);background:var(--sunk)}
+
+/* modules strip */
+.modules{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.chip{font:600 .78rem var(--f-mono);padding:5px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:var(--surface)}
+.chip.on{border-color:var(--accent);color:var(--accent)}
+.chip.soon::after{content:" · soon";opacity:.7}
+
+/* hero */
+.hero{padding-block:40px 28px}
+.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:36px;align-items:center}
+.hero h1{font-size:clamp(2.2rem,5vw,3.6rem);font-weight:700;letter-spacing:-.02em}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero .lede{font-size:1.15rem;color:var(--muted);max-width:52ch;margin-top:16px}
+.slide{position:relative;border-radius:14px;overflow:hidden;background:var(--slide);aspect-ratio:5/4;max-width:100%}
+.slide canvas{width:100%;height:100%;display:block}
+.legend{position:absolute;left:12px;bottom:10px;display:flex;gap:10px;flex-wrap:wrap;font:600 .72rem var(--f-mono);color:#C9D4E3}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend b{width:8px;height:8px;border-radius:50%;display:inline-block}
+.scalebar{position:absolute;right:14px;bottom:12px;font:600 .7rem var(--f-mono);color:#C9D4E3;text-align:right}
+.scalebar::before{content:"";display:block;width:64px;height:3px;background:#C9D4E3;margin-left:auto;margin-bottom:4px}
+
+section{padding-block:56px;border-top:1px solid var(--line)}
+.sec-head{display:grid;gap:10px;margin-bottom:28px}
+
+/* primer */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px;display:grid;gap:10px;align-content:start;min-width:0}
+.panel h3{display:flex;align-items:center;gap:10px}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.panel ul{margin:0;padding-left:1.1em;display:grid;gap:4px}
+.diagram{overflow-x:auto;margin-top:24px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.diagram svg{display:block;min-width:720px;width:100%;height:auto}
+.diagram text{font-family:var(--f-body);fill:var(--ink)}
+.diagram .sm{font-size:12px;fill:var(--muted)}
+
+/* platforms */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.filters button{font:600 .85rem var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:6px 12px;border-radius:999px;cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.plat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.plat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:grid;gap:12px;align-content:start;min-width:0}
+.plat header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.plat .co{font:600 .78rem var(--f-mono);color:var(--muted);letter-spacing:.04em}
+.tag{font:600 .7rem var(--f-mono);padding:3px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+.t-img{background:color-mix(in srgb,var(--ch-green) 16%,transparent);color:var(--ch-green)}
+.t-seq{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+.t-roi{background:color-mix(in srgb,var(--ch-amber) 18%,transparent);color:var(--ch-amber)}
+.t-pro{background:color-mix(in srgb,var(--ch-mag) 16%,transparent);color:var(--ch-mag)}
+.specs{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:.92rem;margin:0}
+.specs dt{color:var(--muted);font:600 .74rem/1.9 var(--f-mono);text-transform:uppercase;letter-spacing:.06em}
+.specs dd{margin:0;font-variant-numeric:tabular-nums}
+.pc{display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:.93rem}
+.pc h4{margin:0 0 4px;font:600 .74rem var(--f-mono);text-transform:uppercase;letter-spacing:.08em}
+.pc .pro h4{color:var(--good)} .pc .con h4{color:var(--bad)}
+.pc ul{margin:0;padding-left:1.05em;display:grid;gap:3px}
+.note{font-size:.88rem;color:var(--muted);margin-top:16px;max-width:80ch}
+
+.chooser{margin-top:28px;overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+.chooser table{border-collapse:collapse;width:100%;min-width:640px;font-size:.94rem}
+.chooser th,.chooser td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+.chooser th{font:600 .74rem var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--sunk)}
+.chooser tr:last-child td{border-bottom:0}
+
+/* pipeline */
+.pipe-layout{display:grid;grid-template-columns:240px minmax(0,1fr);gap:32px;align-items:start}
+.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 76px);display:grid;gap:2px;font-size:.9rem}
+.toc .prog{font:600 .78rem var(--f-mono);color:var(--muted);margin-bottom:8px}
+.toc .bar{height:4px;background:var(--sunk);border-radius:2px;overflow:hidden;margin-bottom:12px}
+.toc .bar i{display:block;height:100%;width:0;background:var(--ch-green);transition:width .3s}
+.toc a{display:grid;grid-template-columns:28px 1fr;gap:4px;padding:5px 6px;border-radius:6px;color:var(--muted);text-decoration:none}
+.toc a:hover{background:var(--sunk);color:var(--ink)}
+.toc a.done{color:var(--ch-green)}
+.toc a span:first-child{font:600 .78rem/1.7 var(--f-mono)}
+.steps{display:grid;gap:22px;min-width:0}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px;display:grid;gap:14px;min-width:0;scroll-margin-top:90px}
+.step-head{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:start}
+.num{font:700 1.5rem/1 var(--f-display);color:var(--accent);min-width:2ch;font-variant-numeric:tabular-nums}
+.step-head .kind{font:600 .7rem var(--f-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:4px}
+.done-toggle{display:flex;align-items:center;gap:6px;font:600 .8rem var(--f-body);color:var(--muted);cursor:pointer;white-space:nowrap}
+.done-toggle input{accent-color:var(--ch-green);width:16px;height:16px}
+.step .why{color:var(--muted);max-width:70ch}
+.callout{border-left:3px solid var(--ch-amber);background:color-mix(in srgb,var(--ch-amber) 8%,var(--surface));padding:10px 14px;border-radius:0 6px 6px 0;font-size:.93rem}
+.callout.new{border-color:var(--ch-mag);background:color-mix(in srgb,var(--ch-mag) 7%,var(--surface))}
+.callout b{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+.check{border-left:3px solid var(--ch-green);background:color-mix(in srgb,var(--ch-green) 7%,var(--surface));padding:10px 14px;border-radius:0 6px 6px 0;font-size:.93rem}
+.check b{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;margin-right:6px;color:var(--ch-green)}
+
+.code{position:relative;background:var(--code-bg);border-radius:8px;min-width:0}
+.code .lang{position:absolute;left:14px;top:9px;font:600 .68rem var(--f-mono);color:var(--code-dim);letter-spacing:.1em;text-transform:uppercase}
+.code button{position:absolute;right:8px;top:6px;font:600 .74rem var(--f-mono);background:transparent;border:1px solid #2A3A50;color:var(--code-ink);padding:3px 9px;border-radius:5px;cursor:pointer}
+.code button:hover{border-color:var(--code-dim)}
+.code pre{margin:0;padding:34px 16px 16px;overflow-x:auto;font:400 .84rem/1.6 var(--f-mono);color:var(--code-ink);tab-size:2}
+.code pre .c{color:var(--code-dim)}
+.tree{font:400 .84rem/1.7 var(--f-mono);background:var(--sunk);border-radius:8px;padding:14px 16px;overflow-x:auto;margin:0;white-space:pre}
+.tree b{color:var(--accent);font-weight:600}
+.tree i{color:var(--muted);font-style:normal}
+
+details.track{border:1px dashed var(--line);border-radius:8px;padding:10px 14px}
+details.track summary{cursor:pointer;font:600 .9rem var(--f-body);color:var(--accent)}
+details.track[open] summary{margin-bottom:10px}
+
+/* trends */
+.trend-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.trend{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:grid;gap:8px;align-content:start;min-width:0}
+.trend .k{font:600 .7rem var(--f-mono);text-transform:uppercase;letter-spacing:.1em}
+
+/* resources */
+.res-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.res-grid h3{font-size:1rem;margin-bottom:10px}
+.res-grid ul{list-style:none;margin:0;padding:0;display:grid;gap:8px;font-size:.95rem}
+.res-grid li span{display:block;color:var(--muted);font-size:.85rem}
+dl.gloss{display:grid;grid-template-columns:minmax(140px,max-content) 1fr;gap:8px 20px;margin:0;font-size:.95rem}
+dl.gloss dt{font:600 .85rem var(--f-mono);color:var(--accent)}
+dl.gloss dd{margin:0}
+
+footer{padding-block:32px 48px;border-top:1px solid var(--line);color:var(--muted);font-size:.88rem}
+
+@media (max-width:900px){
+  .hero-grid,.two,.pipe-layout{grid-template-columns:1fr}
+  .plat-grid{grid-template-columns:1fr}
+  .trend-grid,.res-grid{grid-template-columns:1fr 1fr}
+  .toc{position:static;grid-template-columns:1fr 1fr}
+  .toc .prog,.toc .bar{grid-column:1/-1}
+}
+@media (max-width:560px){
+  body{font-size:16px}
+  .trend-grid,.res-grid,.pc,.toc{grid-template-columns:1fr}
+  .tabs{margin-left:0;width:100%}
+  .step{padding:18px}
+  .step-head{grid-template-columns:auto 1fr}
+  .done-toggle{grid-column:2}
+  dl.gloss{grid-template-columns:1fr;gap:2px 0}
+  dl.gloss dd{margin-bottom:8px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+html{scroll-behavior:smooth}
+</style>
+</head>
+<body>
+
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="index.html"><i aria-hidden="true"></i>OmicsRun Learn</a>
+    <nav class="tabs" aria-label="Sections">
+      <a href="#primer">Spatial omics</a>
+      <a href="#platforms">Platforms</a>
+      <a href="#pipeline">Xenium pipeline</a>
+      <a href="#trends">What's new</a>
+      <a href="#resources">Resources</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <p class="eyebrow">Learning hub · Module 1 · Spatial</p>
+        <h1>Read tissue the way it was built: <em>Xenium</em>, from slide to cell types.</h1>
+        <p class="lede">A practical module on spatial omics. Learn what the technology measures, how the major platforms differ, then work through a complete Xenium analysis in R, from raw output bundle to annotated cell types and tissue niches.</p>
+        <div class="modules" aria-label="Learning modules">
+          <span class="chip on">Spatial · Xenium</span>
+          <span class="chip soon">Spatial · Visium HD</span>
+          <a class="chip" href="rnaseq.html" style="text-decoration:none">RNA-seq · limma</a>
+          <span class="chip soon">DNA-seq / WGS</span>
+          <a class="chip" href="scrnaseq.html" style="text-decoration:none">scRNA-seq · Harmony</a>
+        </div>
+      </div>
+      <figure class="slide" style="margin:0">
+        <canvas id="tissue" aria-label="Simulated Xenium field of view: cell outlines with transcripts coloured by gene"></canvas>
+        <div class="legend" aria-hidden="true">
+          <span><b style="background:#4CD49A"></b>EPCAM</span>
+          <span><b style="background:#F06DC2"></b>PTPRC</span>
+          <span><b style="background:#F0B547"></b>ACTA2</span>
+          <span><b style="background:#7FB4FF"></b>PECAM1</span>
+        </div>
+        <div class="scalebar" aria-hidden="true">20 µm</div>
+      </figure>
+    </div>
+  </div>
+
+  <!-- PRIMER -->
+  <section id="primer">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Part 1 · Concepts</p>
+        <h2>What is spatial omics?</h2>
+      </div>
+      <div class="prose">
+        <p>Single-cell RNA-seq tells you <em>which</em> cells are in a sample and what they express, but it dissociates the tissue first, so every cell's location is lost. Spatial omics measures RNA (and increasingly protein) <strong>in place</strong>, on an intact tissue section. Each measurement keeps its x/y coordinate.</p>
+        <p>That coordinate is what makes new questions answerable. Which immune cells actually touch the tumour? Is a fibroblast state confined to the invasive margin? Do two cell types always appear together in the same micro-environment? These are questions about neighbourhoods, and you can only ask them when location is preserved.</p>
+      </div>
+
+      <div class="two" style="margin-top:28px">
+        <div class="panel">
+          <h3><span class="dot" style="background:var(--ch-green)"></span>Imaging-based (in situ)</h3>
+          <p class="muted">Fluorescent probes bind target RNAs directly in the tissue. A microscope images the slide over many cycles, and each transcript's colour code is decoded into a gene name and a position.</p>
+          <ul>
+            <li>Single-cell and subcellular resolution</li>
+            <li>Targeted gene panels (hundreds to a few thousand genes; some now reach whole transcriptome)</li>
+            <li>Examples: Xenium, CosMx, MERSCOPE</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3><span class="dot" style="background:var(--accent)"></span>Sequencing-based (capture)</h3>
+          <p class="muted">Transcripts are captured onto a slide covered in spatially barcoded spots or bins. The library is sequenced, and the barcode tells you where each read came from.</p>
+          <ul>
+            <li>Unbiased whole transcriptome</li>
+            <li>Resolution set by spot or bin size (55 µm down to 2 µm or less)</li>
+            <li>Examples: Visium / Visium HD, Stereo-seq, Curio Seeker</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="diagram" role="img" aria-label="Diagram comparing the imaging-based workflow (probe hybridisation, cyclic imaging, decoding, cell segmentation) with the sequencing-based workflow (capture on barcoded slide, library prep and sequencing, barcode-to-position mapping, binning).">
+        <svg viewBox="0 0 960 230" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--muted)"/></marker></defs>
+          <text x="0" y="22" style="font-weight:700;font-size:14px">Imaging-based</text>
+          <g style="fill:var(--surface);stroke:var(--ch-green);stroke-width:1.5">
+            <rect x="0" y="34" width="200" height="56" rx="8"/><rect x="250" y="34" width="200" height="56" rx="8"/><rect x="500" y="34" width="200" height="56" rx="8"/><rect x="750" y="34" width="210" height="56" rx="8"/>
+          </g>
+          <g style="stroke:var(--muted);stroke-width:1.5" marker-end="url(#ar)"><line x1="204" y1="62" x2="244" y2="62"/><line x1="454" y1="62" x2="494" y2="62"/><line x1="704" y1="62" x2="744" y2="62"/></g>
+          <text x="100" y="58" text-anchor="middle" style="font-size:13px;font-weight:600">Probes hybridise</text><text x="100" y="76" text-anchor="middle" class="sm">in the tissue section</text>
+          <text x="350" y="58" text-anchor="middle" style="font-size:13px;font-weight:600">Cyclic imaging</text><text x="350" y="76" text-anchor="middle" class="sm">many rounds of fluorescence</text>
+          <text x="600" y="58" text-anchor="middle" style="font-size:13px;font-weight:600">Decode transcripts</text><text x="600" y="76" text-anchor="middle" class="sm">gene + x,y,z + quality (QV)</text>
+          <text x="855" y="58" text-anchor="middle" style="font-size:13px;font-weight:600">Segment cells</text><text x="855" y="76" text-anchor="middle" class="sm">→ cell × gene matrix</text>
+
+          <text x="0" y="142" style="font-weight:700;font-size:14px">Sequencing-based</text>
+          <g style="fill:var(--surface);stroke:var(--accent);stroke-width:1.5">
+            <rect x="0" y="154" width="200" height="56" rx="8"/><rect x="250" y="154" width="200" height="56" rx="8"/><rect x="500" y="154" width="200" height="56" rx="8"/><rect x="750" y="154" width="210" height="56" rx="8"/>
+          </g>
+          <g style="stroke:var(--muted);stroke-width:1.5" marker-end="url(#ar)"><line x1="204" y1="182" x2="244" y2="182"/><line x1="454" y1="182" x2="494" y2="182"/><line x1="704" y1="182" x2="744" y2="182"/></g>
+          <text x="100" y="178" text-anchor="middle" style="font-size:13px;font-weight:600">Capture on slide</text><text x="100" y="196" text-anchor="middle" class="sm">spatially barcoded spots/bins</text>
+          <text x="350" y="178" text-anchor="middle" style="font-size:13px;font-weight:600">Library + sequencing</text><text x="350" y="196" text-anchor="middle" class="sm">Illumina / MGI short reads</text>
+          <text x="600" y="178" text-anchor="middle" style="font-size:13px;font-weight:600">Barcode → position</text><text x="600" y="196" text-anchor="middle" class="sm">Space Ranger / SAW</text>
+          <text x="855" y="178" text-anchor="middle" style="font-size:13px;font-weight:600">Bin or segment</text><text x="855" y="196" text-anchor="middle" class="sm">→ spot/bin × gene matrix</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLATFORMS -->
+  <section id="platforms">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Part 2 · The landscape, October 2026</p>
+        <h2>Who makes what, and where each one fits</h2>
+        <p class="muted" style="max-width:70ch">Specs below come from vendor material and published benchmarks. Detection efficiency and false-positive rates depend heavily on tissue, panel and chemistry version, so treat them as a starting point and pilot on your own samples.</p>
+      </div>
+
+      <div class="filters" role="group" aria-label="Filter platforms">
+        <button type="button" data-f="all" aria-pressed="true">All</button>
+        <button type="button" data-f="img" aria-pressed="false">Imaging, single-cell</button>
+        <button type="button" data-f="seq" aria-pressed="false">Sequencing-based</button>
+        <button type="button" data-f="roi" aria-pressed="false">Region of interest</button>
+        <button type="button" data-f="pro" aria-pressed="false">Protein</button>
+      </div>
+
+      <div class="plat-grid" id="plats">
+        <article class="plat" data-k="img">
+          <header><div><p class="co">10x Genomics</p><h3>Xenium (Xenium Prime 5K, Xenium Protein)</h3></div><span class="tag t-img">Imaging</span></header>
+          <dl class="specs"><dt>Chemistry</dt><dd>Padlock probes + rolling-circle amplification, cyclic imaging</dd><dt>Plex</dt><dd>Pre-designed panels (~300–480 genes) up to 5,000 genes (Prime 5K) + up to 100 custom; RNA + protein on the same section with Xenium Protein</dd><dt>Resolution</dt><dd>Subcellular; per-transcript coordinates</dd><dt>Samples</dt><dd>FFPE, fresh-frozen</dd><dt>Run time</dt><dd>About 3 days (480-plex) to under 6 days (5K); 2 slides per run</dd></dl>
+          <div class="pc"><div class="pro"><h4>Advantages</h4><ul><li>Very low false-positive rate in independent benchmarks</li><li>Mature software: Onboard Analysis, Xenium Ranger, free Xenium Explorer</li><li>Multimodal cell segmentation stains included</li><li>Post-run H&amp;E or IF on the same section</li></ul></div><div class="con"><h4>Limitations</h4><ul><li>Targeted panel, not whole transcriptome</li><li>Fewer transcripts per cell than CosMx in some benchmarks</li><li>Instrument capital cost; 5K runs are long</li><li>Imageable area per slide is fixed</li></ul></div></div>
+        </article>
+
+        <article class="plat" data-k="img pro">
+          <header><div><p class="co">Bruker Spatial Biology (formerly NanoString)</p><h3>CosMx SMI</h3></div><span class="tag t-img">Imaging</span></header>
+          <dl class="specs"><dt>Chemistry</dt><dd>Cyclic in situ hybridisation with branched readout probes</dd><dt>Plex</dt><dd>1K and 6K panels, Whole Transcriptome (~19,000 genes); up to 76 proteins on the same slide</dd><dt>Resolution</dt><dd>Subcellular (~120 nm imaging)</dd><dt>Samples</dt><dd>FFPE, fresh-frozen, cultured cells, organoids</dd><dt>Throughput</dt><dd>Up to 4 slides per run; millions of cells per slide</dd></dl>
+          <div class="pc"><div class="pro"><h4>Advantages</h4><ul><li>Highest plex of the imaging platforms, now whole transcriptome</li><li>Same-cell RNA + protein multiomics</li><li>High transcripts/genes per cell in benchmarks</li><li>Large tissue area per run</li></ul></div><div class="con"><h4>Limitations</h4><ul><li>Higher false-discovery rate than Xenium in some benchmarks</li><li>Analysis centred on the AtoMx cloud platform</li><li>Very large raw data volumes</li><li>Company transition after Bruker acquired NanoString (2024)</li></ul></div></div>
+        </article>
+
+        <article class="plat" data-k="img">
+          <header><div><p class="co">Vizgen</p><h3>MERSCOPE / MERSCOPE Ultra</h3></div><span class="tag t-img">Imaging</span></header>
+          <dl class="specs"><dt>Chemistry</dt><dd>MERFISH: combinatorial barcodes with error-robust decoding</dd><dt>Plex</dt><dd>Up to ~1,000 genes; fully custom panels</dd><dt>Resolution</dt><dd>Subcellular (~20 nm localisation on Ultra)</dd><dt>Samples</dt><dd>FFPE, fresh-frozen</dd><dt>Throughput</dt><dd>Up to ~9 cm² per week (Ultra)</dd></dl>
+          <div class="pc"><div class="pro"><h4>Advantages</h4><ul><li>Strong academic track record (e.g. Allen Brain Cell Atlas)</li><li>Flexible custom panel design</li><li>Large imaging area on Ultra</li></ul></div><div class="con"><h4>Limitations</h4><ul><li>Lower plex ceiling than Xenium 5K or CosMx WTX</li><li>Higher false-discovery rate in one 2025 benchmark</li><li>Smaller third-party tool ecosystem</li></ul></div></div>
+        </article>
+
+        <article class="plat" data-k="seq">
+          <header><div><p class="co">10x Genomics</p><h3>Visium HD (and Visium HD 3′)</h3></div><span class="tag t-seq">Sequencing</span></header>
+          <dl class="specs"><dt>Chemistry</dt><dd>Probe or poly(A) capture onto a 2 × 2 µm barcoded grid via CytAssist; Illumina sequencing</dd><dt>Plex</dt><dd>Whole transcriptome</dd><dt>Resolution</dt><dd>2 µm bins, typically analysed at 8 µm or segmented into cells</dd><dt>Samples</dt><dd>FFPE, fixed/fresh-frozen (3′ assay: fresh-frozen)</dd><dt>Area</dt><dd>6.5 × 6.5 mm or 11 × 11 mm capture areas</dd></dl>
+          <div class="pc"><div class="pro"><h4>Advantages</h4><ul><li>Unbiased discovery across all genes</li><li>Runs on existing sequencers, no imager needed</li><li>H&amp;E on the same section; mature Space Ranger tooling</li></ul></div><div class="con"><h4>Limitations</h4><ul><li>Not true single-cell: needs binning or segmentation</li><li>Lateral diffusion blurs cell boundaries</li><li>Sequencing cost scales with depth</li></ul></div></div>
+        </article>
+
+        <article class="plat" data-k="seq">
+          <header><div><p class="co">STOmics (BGI / MGI)</p><h3>Stereo-seq</h3></div><span class="tag t-seq">Sequencing</span></header>
+          <dl class="specs"><dt>Chemistry</dt><dd>DNA nanoball (DNB) patterned arrays</dd><dt>Plex</dt><dd>Whole transcriptome</dd><dt>Resolution</dt><dd>~500 nm spot pitch, analysed as bins or cells</dd><dt>Area</dt><dd>Chips from 1 cm² up to large multi-cm² formats</dd></dl>
+          <div class="pc"><div class="pro"><h4>Advantages</h4><ul><li>Very large field of view: whole organs and embryos</li><li>Subcellular pitch with whole-transcriptome coverage</li></ul></div><div class="con"><h4>Limitations</h4><ul><li>Requires MGI sequencing; sparse counts per bin</li><li>Procurement and data-governance considerations in some regions</li></ul></div></div>
+        </article>
+
+        <article class="plat" data-k="roi pro">
+          <header><div><p class="co">Bruker Spatial Biology</p><h3>GeoMx Digital Spatial Profiler</h3></div><span class="tag t-roi">Region of interest</span></header>
+          <dl class="specs"><dt>Chemistry</dt><dd>UV-photocleavable barcodes released from user-drawn regions</dd><dt>Plex</dt><dd>Whole Transcriptome Atlas (18,000+ genes); 1,200+ proteins</dd><dt>Resolution</dt><dd>Regions of ~10 µm and up; usually 100+ cells per region</dd><dt>Throughput</dt><dd>Up to ~40 slides per week</dd></dl>
+          <div class="pc"><div class="pro"><h4>Advantages</h4><ul><li>High throughput, suited to large clinical cohorts</li><li>Cost per sample lower than single-cell imaging</li></ul></div><div class="con"><h4>Limitations</h4><ul><li>No cell-by-cell map</li><li>Results depend on how regions are chosen</li></ul></div></div>
+        </article>
+
+        <article class="plat" data-k="pro">
+          <header><div><p class="co">Akoya Biosciences (now part of Quanterix)</p><h3>PhenoCycler-Fusion</h3></div><span class="tag t-pro">Protein</span></header>
+          <dl class="specs"><dt>Chemistry</dt><dd>DNA-barcoded antibodies, cyclic imaging</dd><dt>Plex</dt><dd>~100+ proteins</dd><dt>Resolution</dt><dd>Single-cell, whole slide</dd></dl>
+          <div class="pc"><div class="pro"><h4>Advantages</h4><ul><li>Whole-slide protein phenotyping</li><li>Strong in immuno-oncology studies</li></ul></div><div class="con"><h4>Limitations</h4><ul><li>Protein only; antibody validation is laborious</li></ul></div></div>
+        </article>
+
+        <article class="plat" data-k="seq">
+          <header><div><p class="co">Curio Bioscience</p><h3>Curio Seeker / Trekker</h3></div><span class="tag t-seq">Sequencing</span></header>
+          <dl class="specs"><dt>Chemistry</dt><dd>Barcoded bead arrays (Slide-seq lineage); Trekker tags single nuclei with location</dd><dt>Plex</dt><dd>Whole transcriptome</dd><dt>Resolution</dt><dd>10 µm beads; single-nucleus with Trekker</dd></dl>
+          <div class="pc"><div class="pro"><h4>Advantages</h4><ul><li>Kit-based, no dedicated instrument</li><li>Works with standard single-cell workflows</li></ul></div><div class="con"><h4>Limitations</h4><ul><li>Fresh-frozen focus; smaller capture areas</li></ul></div></div>
+        </article>
+      </div>
+
+      <div class="chooser">
+        <table>
+          <thead><tr><th>Your question</th><th>Good first choice</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>Map known cell types and their neighbours at single-cell level</td><td>Xenium (5K) or CosMx</td><td>Per-transcript positions, real cell boundaries</td></tr>
+            <tr><td>Discover unknown genes or pathways across a tissue</td><td>Visium HD or CosMx WTX</td><td>Whole-transcriptome coverage</td></tr>
+            <tr><td>Hundreds of patient samples, defined regions</td><td>GeoMx DSP</td><td>Throughput and cost per sample</td></tr>
+            <tr><td>Whole organ or embryo at once</td><td>Stereo-seq or MERSCOPE Ultra</td><td>Largest imageable area</td></tr>
+            <tr><td>Immune phenotyping with proteins</td><td>Xenium Protein, CosMx multiomics, or PhenoCycler</td><td>RNA + protein, or deep protein panels</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- PIPELINE -->
+  <section id="pipeline">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Part 3 · Hands-on tutorial</p>
+        <h2>Xenium analysis pipeline in R</h2>
+        <p class="muted" style="max-width:72ch">Built on the 10x Genomics <a href="https://www.10xgenomics.com/analysis-guides/xenium-downstream-analysis-in-r-tutorial" target="_blank" rel="noopener">Xenium downstream analysis in R</a> guide (Seurat v5, BPCells sketching, Harmony, Banksy), with extra steps for quality control, re-segmentation, reference-based annotation and niche analysis. Tick steps off as you go; your progress is saved in this browser.</p>
+      </div>
+
+      <div class="pipe-layout">
+        <nav class="toc" aria-label="Pipeline steps" id="toc">
+          <p class="prog" id="progtxt">0 of 12 steps done</p>
+          <div class="bar"><i id="progbar"></i></div>
+        </nav>
+
+        <div class="steps" id="steps">
+
+          <article class="step" id="s1" data-title="Set up R">
+            <div class="step-head"><span class="num">01</span><div><p class="kind">Setup</p><h3>Install the R toolkit</h3></div><label class="done-toggle"><input type="checkbox" id="d-s1">Done</label></div>
+            <p class="why">Seurat v5 reads Xenium bundles directly. BPCells keeps large matrices on disk so a 1M-cell Prime 5K run fits on a laptop. Harmony corrects batch effects; Banksy adds spatially aware clustering; spacexr gives reference-based cell typing.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre><span class="c"># R ≥ 4.3 recommended</span>
+install.packages(c("Seurat", "remotes", "arrow", "dplyr", "ggplot2", "harmony"))
+remotes::install_github("bnprks/BPCells/r")           <span class="c"># on-disk matrices</span>
+remotes::install_github("satijalab/seurat-wrappers")  <span class="c"># RunBanksy()</span>
+remotes::install_github("prabhakarlab/Banksy")
+remotes::install_github("dmcable/spacexr")            <span class="c"># RCTD annotation</span>
+
+library(Seurat); library(dplyr); library(ggplot2)
+options(future.globals.maxSize = 8 * 1024^3)          <span class="c"># 8 GB for big objects</span></pre></div>
+            <div class="callout"><b>Compute</b>A Xenium v1 run (~300k cells) needs ~32 GB RAM. A Prime 5K run with ~1M cells is comfortable at 64–128 GB, or use the sketch workflow in step 09. On AWS that is roughly an r6i.2xlarge to r6i.4xlarge instance.</div>
+          </article>
+
+          <article class="step" id="s2" data-title="Know the output bundle">
+            <div class="step-head"><span class="num">02</span><div><p class="kind">Data</p><h3>Get the data and learn the output bundle</h3></div><label class="done-toggle"><input type="checkbox" id="d-s2">Done</label></div>
+            <p class="why">Download the Xenium Prime 5K Human Breast Cancer (FFPE) dataset from the <a href="https://www.10xgenomics.com/datasets" target="_blank" rel="noopener">10x Datasets page</a> (filter by Xenium). Unzip it and you get the <code>outs/</code> folder the instrument produces. Knowing these files matters more than any one package.</p>
+<pre class="tree"><b>outs/</b>
+├── experiment.xenium            <i># run metadata; open this in Xenium Explorer</i>
+├── metrics_summary.csv          <i># run-level QC: median transcripts/cell, decoded counts</i>
+├── <b>cell_feature_matrix.h5</b>       <i># cells × genes counts (plus control probes/codewords)</i>
+├── cells.parquet                <i># per-cell centroid, area, nucleus area, counts</i>
+├── <b>transcripts.parquet</b>          <i># every decoded transcript: gene, x, y, z, qv, cell_id</i>
+├── cell_boundaries.parquet      <i># segmentation polygons</i>
+├── nucleus_boundaries.parquet
+├── morphology_focus/            <i># DAPI + multimodal segmentation stain images (OME-TIFF)</i>
+└── analysis/                    <i># instrument's own clustering, UMAP, DE</i></pre>
+            <div class="code"><span class="lang">Shell</span><button type="button">Copy</button><pre><span class="c"># paste the "Output files" link from the dataset page</span>
+curl -O "&lt;URL of the Xenium output bundle .zip&gt;"
+unzip Xenium_Prime_Human_Breast_*_outs.zip -d breast_5k
+head -5 breast_5k/outs/metrics_summary.csv</pre></div>
+            <div class="callout"><b>Tip</b>Some older tools want <code>transcripts.csv.gz</code>. Convert with <code>arrow::read_parquet("transcripts.parquet") |&gt; data.table::fwrite("transcripts.csv.gz")</code>. Recent Seurat reads Parquet directly.</div>
+          </article>
+
+          <article class="step" id="s3" data-title="Load into Seurat">
+            <div class="step-head"><span class="num">03</span><div><p class="kind">Import</p><h3>Load Xenium into Seurat</h3></div><label class="done-toggle"><input type="checkbox" id="d-s3">Done</label></div>
+            <p class="why"><code>LoadXenium()</code> builds a Seurat object with the gene counts, cell centroids, segmentation boundaries and transcript coordinates in one spatial "field of view" (FOV). Low-quality transcripts (QV &lt; 20) are dropped at import.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>xen &lt;- LoadXenium("breast_5k/outs", fov = "fov", assay = "Xenium")
+xen
+Assays(xen)        <span class="c"># Xenium + BlankCodeword / ControlCodeword / ControlProbe</span>
+
+<span class="c"># add per-cell morphology (area) from cells.parquet</span>
+cells &lt;- arrow::read_parquet("breast_5k/outs/cells.parquet")
+xen$cell_area    &lt;- cells$cell_area[match(colnames(xen), cells$cell_id)]
+xen$nucleus_area &lt;- cells$nucleus_area[match(colnames(xen), cells$cell_id)]</pre></div>
+          </article>
+
+          <article class="step" id="s4" data-title="Quality control">
+            <div class="step-head"><span class="num">04</span><div><p class="kind">QC</p><h3>Quality control: cells, controls and run metrics</h3></div><label class="done-toggle"><input type="checkbox" id="d-s4">Done</label></div>
+            <p class="why">Imaging data has its own failure modes: empty segmentations, tiny debris "cells", and off-target signal. Negative-control probes and blank codewords estimate the false-positive rate. Thresholds depend on panel size, so look at the distributions before you choose cutoffs.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>VlnPlot(xen, features = c("nFeature_Xenium", "nCount_Xenium", "cell_area"),
+        ncol = 3, pt.size = 0)
+
+<span class="c"># false-positive estimate: control signal relative to real genes</span>
+ctrl &lt;- colSums(LayerData(xen, assay = "ControlProbe", layer = "counts")) +
+        colSums(LayerData(xen, assay = "BlankCodeword", layer = "counts"))
+xen$pct_control &lt;- 100 * ctrl / (xen$nCount_Xenium + ctrl)
+summary(xen$pct_control)                       <span class="c"># aim for a median well under 1%</span>
+
+<span class="c"># filter: thresholds for a 5K panel; use ~10 counts / 5 genes for a ~300-gene panel</span>
+xen &lt;- subset(xen, subset = nCount_Xenium &gt;= 50 &amp; nFeature_Xenium &gt;= 25 &amp;
+                            pct_control &lt; 5 &amp; cell_area &gt; 10)
+ncol(xen)</pre></div>
+            <div class="check"><b>Checkpoint</b>Compare your median transcripts per cell with <code>metrics_summary.csv</code>. Map the removed cells with <code>ImageDimPlot()</code>: if they cluster in one region, suspect a tissue fold or detachment, not biology.</div>
+          </article>
+
+          <article class="step" id="s5" data-title="Re-segment (optional)">
+            <div class="step-head"><span class="num">05</span><div><p class="kind">Segmentation · newer practice</p><h3>Re-segment cells if boundaries look wrong</h3></div><label class="done-toggle"><input type="checkbox" id="d-s5">Done</label></div>
+            <p class="why">Every downstream result inherits the segmentation. Nuclear expansion can assign one cell's transcripts to its neighbour, which shows up as "doublet" clusters such as T cells expressing epithelial keratins. Recent runs use multimodal segmentation (boundary, interior and nuclear stains). For older data, or crowded tissue, re-segment.</p>
+            <div class="code"><span class="lang">Shell</span><button type="button">Copy</button><pre><span class="c"># Xenium Ranger (free from 10x): change nuclear expansion distance</span>
+xeniumranger resegment --id=breast_reseg \
+  --xenium-bundle=breast_5k/outs --expansion-distance=5
+
+<span class="c"># or import a segmentation made elsewhere (Cellpose, Baysor, Proseg)</span>
+xeniumranger import-segmentation --id=breast_cellpose \
+  --xenium-bundle=breast_5k/outs --cells=cellpose_masks.tif</pre></div>
+            <div class="callout new"><b>2025–26 trend</b>Transcript-based segmenters (Proseg, Baysor, segger) place cell boundaries using the transcripts themselves, not just the stain. They usually reduce contamination between neighbouring cells. Compare marker co-expression before and after to judge the gain.</div>
+          </article>
+
+          <article class="step" id="s6" data-title="Normalise &amp; cluster">
+            <div class="step-head"><span class="num">06</span><div><p class="kind">Core analysis</p><h3>Normalise, reduce and cluster</h3></div><label class="done-toggle"><input type="checkbox" id="d-s6">Done</label></div>
+            <p class="why">Targeted panels are not a random sample of the transcriptome, so use every gene as a feature rather than picking variable genes. SCTransform handles the depth differences between small and large cells well.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>xen &lt;- SCTransform(xen, assay = "Xenium")
+xen &lt;- RunPCA(xen, npcs = 30, features = rownames(xen))
+ElbowPlot(xen, ndims = 30)
+xen &lt;- RunUMAP(xen, dims = 1:30)
+xen &lt;- FindNeighbors(xen, reduction = "pca", dims = 1:30)
+xen &lt;- FindClusters(xen, resolution = 0.3)
+
+DimPlot(xen, label = TRUE) + NoLegend()</pre></div>
+            <div class="callout"><b>Choose</b>For &gt;500k cells, SCTransform gets slow. Use <code>NormalizeData()</code> + <code>ScaleData()</code>, or the sketch workflow in step 09. Try resolutions from 0.2 to 1.0; with 5,000 genes you can resolve finer subtypes than with a 300-gene panel.</div>
+          </article>
+
+          <article class="step" id="s7" data-title="Plot on the tissue">
+            <div class="step-head"><span class="num">07</span><div><p class="kind">Visualise</p><h3>Plot clusters and transcripts on the tissue</h3></div><label class="done-toggle"><input type="checkbox" id="d-s7">Done</label></div>
+            <p class="why">This is where spatial pays off. Put clusters back on the slide, then crop a region of interest and overlay individual transcripts with the segmentation outlines to check that clusters match morphology.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>ImageDimPlot(xen, fov = "fov", cols = "polychrome", size = 0.6, axes = TRUE)
+ImageFeaturePlot(xen, features = c("EPCAM", "PTPRC", "ACTA2", "PECAM1"),
+                 max.cutoff = "q90", size = 0.6)
+
+<span class="c"># zoom into a region of interest (coordinates in microns)</span>
+xen[["zoom"]] &lt;- Crop(xen[["fov"]], x = c(1200, 2900), y = c(3750, 4550),
+                      coords = "plot")
+DefaultBoundary(xen[["zoom"]]) &lt;- "segmentation"
+ImageDimPlot(xen, fov = "zoom", cols = "polychrome", coord.fixed = FALSE,
+             border.color = "white", border.size = 0.1,
+             molecules = c("EPCAM", "PTPRC", "ACTA2", "PECAM1"), nmols = 20000)</pre></div>
+          </article>
+
+          <article class="step" id="s8" data-title="Annotate cell types">
+            <div class="step-head"><span class="num">08</span><div><p class="kind">Annotation</p><h3>Find markers and annotate cell types</h3></div><label class="done-toggle"><input type="checkbox" id="d-s8">Done</label></div>
+            <p class="why">Start with marker genes per cluster, as in the 10x guide. Then confirm with a reference: label transfer from a matched scRNA-seq atlas is now standard and catches mixed clusters that markers alone miss.</p>
+            <div class="code"><span class="lang">R · markers</span><button type="button">Copy</button><pre>xen &lt;- PrepSCTFindMarkers(xen)
+markers &lt;- FindAllMarkers(xen, only.pos = TRUE, logfc.threshold = 0.25, min.pct = 0.1)
+top5 &lt;- markers |&gt; group_by(cluster) |&gt; slice_max(avg_log2FC, n = 5)
+DotPlot(xen, features = unique(top5$gene)) + RotatedAxis()
+
+<span class="c"># name clusters from markers (example map; fill in from your DotPlot)</span>
+labels &lt;- c("0" = "Tumour epithelium", "1" = "CAF", "2" = "Macrophage",
+            "3" = "T cell", "4" = "Endothelial", "5" = "B / plasma")
+xen$celltype &lt;- unname(labels[as.character(xen$seurat_clusters)])</pre></div>
+            <div class="code"><span class="lang">R · reference (RCTD)</span><button type="button">Copy</button><pre>library(spacexr)
+<span class="c"># ref_seurat: a matched scRNA-seq reference with a "celltype" column</span>
+ref &lt;- Reference(LayerData(ref_seurat, layer = "counts"),
+                 factor(ref_seurat$celltype))
+coords &lt;- GetTissueCoordinates(xen[["fov"]], which = "centroids")
+rownames(coords) &lt;- coords$cell
+query &lt;- SpatialRNA(coords[, c("x", "y")],
+                    LayerData(xen, assay = "Xenium", layer = "counts"))
+rctd &lt;- create.RCTD(query, ref, max_cores = 8, UMI_min = 20)
+rctd &lt;- run.RCTD(rctd, doublet_mode = "doublet")   <span class="c"># models 1–2 types per cell</span>
+res &lt;- rctd@results$results_df
+xen$rctd_type &lt;- as.character(res$first_type[match(colnames(xen), rownames(res))])</pre></div>
+            <div class="check"><b>Export</b>Load labels back into Xenium Explorer: <code>write.csv(data.frame(cell_id = colnames(xen), group = xen$celltype), "celltypes.csv", row.names = FALSE, quote = FALSE)</code>, then Cell → Add cell categorization.</div>
+          </article>
+
+          <article class="step" id="s9" data-title="Multi-sample at scale">
+            <div class="step-head"><span class="num">09</span><div><p class="kind">Scale</p><h3>Integrate several samples with sketching and Harmony</h3></div><label class="done-toggle"><input type="checkbox" id="d-s9">Done</label></div>
+            <p class="why">Two Prime 5K slides can exceed a million cells. The 10x guide keeps the full matrices on disk with BPCells, learns structure on a 50,000-cell "sketch", corrects batch effects with Harmony, then projects the result back onto every cell.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>library(BPCells)
+samples &lt;- c(breast = "breast_5k/outs", cervix = "cervix_5k/outs")
+
+mats &lt;- lapply(names(samples), function(s) {
+  m &lt;- open_matrix_10x_hdf5(file.path(samples[[s]], "cell_feature_matrix.h5"),
+                            feature_type = "Gene Expression")
+  colnames(m) &lt;- paste0(s, "_", colnames(m))           <span class="c"># unique cell IDs</span>
+  write_matrix_dir(m, dir = file.path("bpcells", s), overwrite = TRUE)
+  open_matrix_dir(file.path("bpcells", s))
+})
+names(mats) &lt;- names(samples)
+
+obj &lt;- CreateSeuratObject(counts = mats)               <span class="c"># one layer per sample</span>
+obj$sample &lt;- sub("_.*", "", colnames(obj))
+obj &lt;- NormalizeData(obj) |&gt; FindVariableFeatures()
+
+obj &lt;- SketchData(obj, ncells = 50000, method = "LeverageScore",
+                  sketched.assay = "sketch")
+DefaultAssay(obj) &lt;- "sketch"
+obj &lt;- FindVariableFeatures(obj) |&gt; ScaleData() |&gt; RunPCA(npcs = 30)
+obj &lt;- IntegrateLayers(obj, method = HarmonyIntegration,
+                       orig.reduction = "pca", new.reduction = "harmony")
+obj &lt;- FindNeighbors(obj, reduction = "harmony", dims = 1:30) |&gt;
+       FindClusters(resolution = 0.5)
+obj &lt;- RunUMAP(obj, reduction = "harmony", dims = 1:30, return.model = TRUE)
+
+<span class="c"># project sketch → all cells</span>
+obj &lt;- ProjectIntegration(obj, sketched.assay = "sketch", assay = "RNA",
+                          reduction = "harmony")
+obj &lt;- ProjectData(obj, sketched.assay = "sketch", assay = "RNA",
+                   sketched.reduction = "harmony.full", full.reduction = "harmony.full",
+                   dims = 1:30, refdata = list(cluster_full = "seurat_clusters"))
+DefaultAssay(obj) &lt;- "RNA"
+DimPlot(obj, reduction = "full.umap", group.by = c("sample", "cluster_full"))</pre></div>
+            <div class="callout"><b>Then</b>Subset to one compartment (for example macrophages) and re-cluster to find states such as SPP1⁺ versus C1Q⁺ tumour-associated macrophages. This is the final section of the 10x guide.</div>
+          </article>
+
+          <article class="step" id="s10" data-title="Spatial domains (Banksy)">
+            <div class="step-head"><span class="num">10</span><div><p class="kind">Spatial</p><h3>Find tissue domains with Banksy</h3></div><label class="done-toggle"><input type="checkbox" id="d-s10">Done</label></div>
+            <p class="why">Standard clustering ignores location. Banksy adds each cell's neighbourhood expression to its own. With a low λ it refines cell types; with a high λ it finds tissue domains such as tumour core, invasive margin, stroma and tertiary lymphoid structures.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>library(SeuratWrappers); library(Banksy)
+
+cent &lt;- GetTissueCoordinates(xen[["fov"]], which = "centroids")
+xen$sx &lt;- cent$x[match(colnames(xen), cent$cell)]
+xen$sy &lt;- cent$y[match(colnames(xen), cent$cell)]
+
+xen &lt;- RunBanksy(xen, lambda = 0.8, assay = "SCT", slot = "data",
+                 features = "all", dimx = "sx", dimy = "sy", k_geom = 30)
+xen &lt;- RunPCA(xen, assay = "BANKSY", reduction.name = "pca.banksy",
+              features = rownames(xen), npcs = 30)
+xen &lt;- FindNeighbors(xen, reduction = "pca.banksy", dims = 1:30)
+xen &lt;- FindClusters(xen, resolution = 0.5, cluster.name = "banksy_domain")
+ImageDimPlot(xen, group.by = "banksy_domain", cols = "polychrome", size = 0.6)</pre></div>
+            <div class="callout"><b>λ guide</b><code>lambda = 0.2</code> for cell typing; <code>lambda = 0.8</code> for domains. Alternatives worth knowing: CellCharter, and the deep-learning model Novae.</div>
+          </article>
+
+          <article class="step" id="s11" data-title="Niches &amp; neighbourhoods">
+            <div class="step-head"><span class="num">11</span><div><p class="kind">Spatial · newer practice</p><h3>Cellular niches and neighbourhood enrichment</h3></div><label class="done-toggle"><input type="checkbox" id="d-s11">Done</label></div>
+            <p class="why">A niche is defined by <em>which cell types surround a cell</em>. Seurat counts the annotated types among each cell's 30 nearest neighbours and clusters those compositions. Then test which pairs of cell types sit together more often than chance.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>xen &lt;- BuildNicheAssay(xen, fov = "fov", group.by = "celltype",
+                       niches.k = 6, neighbors.k = 30)
+ImageDimPlot(xen, group.by = "niches", size = 0.6, dark.background = FALSE)
+
+<span class="c"># composition of each niche</span>
+table(xen$celltype, xen$niches) |&gt; prop.table(margin = 2) |&gt; round(2)</pre></div>
+            <details class="track">
+              <summary>Python track: neighbourhood enrichment with squidpy</summary>
+              <div class="code"><span class="lang">Python</span><button type="button">Copy</button><pre>import spatialdata_io as sdio, scanpy as sc, squidpy as sq
+
+sdata = sdio.xenium("breast_5k/outs")          <span class="c"># images, shapes, points + table</span>
+adata = sdata.tables["table"]
+sc.pp.filter_cells(adata, min_counts=50)
+sc.pp.normalize_total(adata); sc.pp.log1p(adata)
+sc.pp.pca(adata); sc.pp.neighbors(adata); sc.tl.umap(adata)
+sc.tl.leiden(adata, resolution=0.5)
+
+sq.gr.spatial_neighbors(adata, coord_type="generic", delaunay=True)
+sq.gr.nhood_enrichment(adata, cluster_key="leiden")
+sq.pl.nhood_enrichment(adata, cluster_key="leiden")
+sq.gr.co_occurrence(adata, cluster_key="leiden")</pre></div>
+            </details>
+          </article>
+
+          <article class="step" id="s12" data-title="Report &amp; share">
+            <div class="step-head"><span class="num">12</span><div><p class="kind">Deliver</p><h3>Save, report and share</h3></div><label class="done-toggle"><input type="checkbox" id="d-s12">Done</label></div>
+            <p class="why">Save the object with on-disk matrices intact, export categories for Xenium Explorer, and record every threshold you chose. Reviewers of spatial papers now expect the segmentation method and QC cutoffs to be reported.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>saveRDS(xen, "xenium_breast_annotated.rds")
+<span class="c"># BPCells objects: keep the bpcells/ folder next to the .rds</span>
+SaveSeuratRds(obj, "xenium_integrated.rds")
+
+for (col in c("celltype", "banksy_domain", "niches")) {
+  write.csv(data.frame(cell_id = colnames(xen), group = xen[[col]][, 1]),
+            paste0("explorer_", col, ".csv"), row.names = FALSE, quote = FALSE)
+}
+writeLines(capture.output(sessionInfo()), "sessionInfo.txt")</pre></div>
+            <div class="check"><b>Checklist</b>Run metrics · QC cutoffs and cells removed · segmentation method · normalisation · clustering resolution · annotation evidence (markers + reference) · package versions.</div>
+          </article>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRENDS -->
+  <section id="trends">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Part 4 · Keeping current</p>
+        <h2>What changed in spatial analysis, 2025–2026</h2>
+      </div>
+      <div class="trend-grid">
+        <div class="trend"><p class="k" style="color:var(--ch-green)">Panels</p><h3>Thousands of genes, plus protein</h3><p class="muted">Xenium Prime 5K, CosMx 6K and Whole Transcriptome, and same-section protein (Xenium Protein, CosMx multiomics) blur the line between targeted and discovery work.</p></div>
+        <div class="trend"><p class="k" style="color:var(--ch-mag)">Segmentation</p><h3>Better cell boundaries</h3><p class="muted">Multimodal stains on-instrument and transcript-aware tools (Proseg, Baysor, segger) reduce mixing between neighbouring cells, which was the largest source of error in early studies.</p></div>
+        <div class="trend"><p class="k" style="color:var(--accent)">Scale</p><h3>Million-cell datasets</h3><p class="muted">On-disk matrices (BPCells, SpatialData/zarr) and sketching are now the default for Prime 5K and WTX runs, not an advanced option.</p></div>
+        <div class="trend"><p class="k" style="color:var(--ch-amber)">Standards</p><h3>SpatialData as common format</h3><p class="muted">The scverse SpatialData format holds images, transcripts, shapes and tables together, with readers for Xenium, CosMx, MERSCOPE and Visium HD. This makes cross-platform work simpler.</p></div>
+        <div class="trend"><p class="k" style="color:var(--ch-green)">Models</p><h3>Spatial foundation models</h3><p class="muted">Models such as Nicheformer and Novae are trained on millions of spatial cells and used for annotation and domain detection. They are promising, but validate them against markers.</p></div>
+        <div class="trend"><p class="k" style="color:var(--ch-mag)">Integration</p><h3>Combining platforms</h3><p class="muted">A common design: Visium HD for whole-transcriptome discovery, then Xenium on a serial section for single-cell validation, aligned to the same H&amp;E.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESOURCES -->
+  <section id="resources">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Part 5 · Go further</p>
+        <h2>Resources and glossary</h2>
+      </div>
+      <div class="res-grid">
+        <div>
+          <h3>Official guides</h3>
+          <ul>
+            <li><a href="https://www.10xgenomics.com/analysis-guides/xenium-downstream-analysis-in-r-tutorial" target="_blank" rel="noopener">10x · Xenium downstream analysis in R</a><span>The basis for this tutorial, with a Colab notebook</span></li>
+            <li><a href="https://satijalab.org/seurat/articles/seurat5_spatial_vignette_2" target="_blank" rel="noopener">Seurat · Imaging-based spatial vignette</a><span>Xenium, CosMx, MERSCOPE in Seurat v5</span></li>
+            <li><a href="https://www.10xgenomics.com/support/software/xenium-ranger" target="_blank" rel="noopener">Xenium Ranger documentation</a><span>Re-segmentation and import</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Python ecosystem</h3>
+          <ul>
+            <li><a href="https://spatialdata.scverse.org/" target="_blank" rel="noopener">SpatialData</a><span>Unified on-disk format and readers</span></li>
+            <li><a href="https://squidpy.readthedocs.io/" target="_blank" rel="noopener">Squidpy</a><span>Neighbourhood and co-occurrence statistics</span></li>
+            <li><a href="https://github.com/prabhakarlab/Banksy" target="_blank" rel="noopener">Banksy</a><span>Spatial clustering in R and Python</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Pipelines and data</h3>
+          <ul>
+            <li><a href="https://nf-co.re/spatialvi/" target="_blank" rel="noopener">nf-core/spatialvi</a><span>Nextflow pipeline for Visium, runs on AWS</span></li>
+            <li><a href="https://www.10xgenomics.com/datasets" target="_blank" rel="noopener">10x public datasets</a><span>Xenium and Visium HD example data</span></li>
+            <li><a href="https://intuitionlabs.ai/articles/spatial-biology-platforms-compared" target="_blank" rel="noopener">Spatial platforms compared (2026)</a><span>Specs and benchmark summary</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 style="margin:40px 0 16px">Glossary</h3>
+      <dl class="gloss">
+        <dt>FOV</dt><dd>Field of view: one imaged tile, or in Seurat the spatial container holding coordinates and boundaries.</dd>
+        <dt>QV</dt><dd>Phred-style quality score for a decoded transcript. QV 20 means about a 1% chance the gene call is wrong.</dd>
+        <dt>Codeword</dt><dd>The sequence of colours across imaging cycles that identifies a gene. Blank codewords match no gene and measure decoding errors.</dd>
+        <dt>Segmentation</dt><dd>Drawing cell boundaries so that transcripts can be assigned to cells.</dd>
+        <dt>Sketching</dt><dd>Analysing a representative subsample of cells, then projecting results onto all cells.</dd>
+        <dt>Niche</dt><dd>A recurring local mix of cell types, for example tumour cells next to SPP1⁺ macrophages and CAFs.</dd>
+        <dt>Bin</dt><dd>In sequencing-based platforms, a square of barcodes aggregated into one unit (for example 8 × 8 µm in Visium HD).</dd>
+      </dl>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">Module 1 of the OmicsRun learning hub. Next modules: Visium HD, bulk RNA-seq (nf-core/rnaseq), DNA-seq (nf-core/sarek). Platform specs as of October 2026; check vendor documentation before buying or designing a study.</div>
+</footer>
+
+<script>
+(function(){
+  /* hero: simulated Xenium field */
+  const cv = document.getElementById('tissue');
+  function draw(){
+    const r = cv.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio||1, 2);
+    if(!r.width) return;
+    cv.width = r.width*dpr; cv.height = r.height*dpr;
+    const g = cv.getContext('2d'); g.scale(dpr,dpr);
+    const W=r.width,H=r.height;
+    g.fillStyle='#060A11'; g.fillRect(0,0,W,H);
+    let s=7; const rnd=()=>{s=(s*16807)%2147483647;return s/2147483647};
+    const genes=['#4CD49A','#F06DC2','#F0B547','#7FB4FF'];
+    const cells=[]; const step=Math.max(30,W/13);
+    for(let y=step/2;y<H+step;y+=step*0.86){for(let x=(Math.round(y/step)%2?step/2:0);x<W+step;x+=step){
+      const cx=x+(rnd()-.5)*step*.45, cy=y+(rnd()-.5)*step*.45;
+      const dx=cx/W, dy=cy/H;
+      let t = (dx+dy*0.6 < 0.75) ? 0 : (rnd()<.5?1:2); if(Math.abs(dx-0.68)<0.05 && rnd()<.7) t=3;
+      cells.push({x:cx,y:cy,r:step*(0.36+rnd()*0.12),t});
+    }}
+    cells.forEach(c=>{
+      g.beginPath(); g.fillStyle='rgba(70,90,200,0.35)'; g.arc(c.x,c.y,c.r*0.42,0,7); g.fill();
+      g.beginPath(); g.strokeStyle='rgba(200,215,235,0.28)'; g.lineWidth=1;
+      const n=9; for(let i=0;i<=n;i++){const a=i/n*Math.PI*2, rr=c.r*(0.88+0.2*Math.sin(a*3+c.x));
+        const px=c.x+Math.cos(a)*rr, py=c.y+Math.sin(a)*rr; i?g.lineTo(px,py):g.moveTo(px,py);} g.stroke();
+      const k=14+Math.floor(rnd()*14);
+      for(let i=0;i<k;i++){const own=rnd()<0.82; const gi=own?c.t:Math.floor(rnd()*4);
+        const a=rnd()*7, d=Math.sqrt(rnd())*c.r*0.85;
+        g.fillStyle=genes[gi]; g.globalAlpha=0.9; g.beginPath(); g.arc(c.x+Math.cos(a)*d,c.y+Math.sin(a)*d,1.4,0,7); g.fill();}
+      g.globalAlpha=1;
+    });
+  }
+  draw(); let to; window.addEventListener('resize',()=>{clearTimeout(to);to=setTimeout(draw,150)});
+
+  /* platform filter */
+  const btns=document.querySelectorAll('.filters button'), plats=document.querySelectorAll('.plat');
+  btns.forEach(b=>b.addEventListener('click',()=>{
+    btns.forEach(x=>x.setAttribute('aria-pressed', x===b?'true':'false'));
+    const f=b.dataset.f; plats.forEach(p=>{p.hidden = f!=='all' && !p.dataset.k.split(' ').includes(f)});
+  }));
+
+  /* copy buttons */
+  document.querySelectorAll('.code button').forEach(b=>b.addEventListener('click',()=>{
+    const pre=b.parentElement.querySelector('pre'); const txt=pre.innerText;
+    const ok=()=>{b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1400)};
+    try{ navigator.clipboard.writeText(txt).then(ok,()=>sel(pre)); }catch(e){ sel(pre); }
+    function sel(el){const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent='Selected';setTimeout(()=>b.textContent='Copy',1400)}
+  }));
+
+  /* TOC + progress */
+  const toc=document.getElementById('toc'), steps=[...document.querySelectorAll('.step')];
+  let saved={}; try{saved=JSON.parse(localStorage.getItem('xen-progress')||'{}')}catch(e){}
+  steps.forEach((s,i)=>{
+    const a=document.createElement('a'); a.href='#'+s.id;
+    a.innerHTML='<span>'+String(i+1).padStart(2,'0')+'</span><span>'+s.dataset.title+'</span>';
+    toc.appendChild(a); s._link=a;
+    const cb=s.querySelector('input[type=checkbox]'); cb.checked=!!saved[s.id];
+    cb.addEventListener('change',()=>{saved[s.id]=cb.checked; try{localStorage.setItem('xen-progress',JSON.stringify(saved))}catch(e){} upd()});
+  });
+  function upd(){
+    let n=0; steps.forEach(s=>{const d=s.querySelector('input').checked; s._link.classList.toggle('done',d); if(d)n++});
+    document.getElementById('progtxt').textContent=n+' of '+steps.length+' steps done';
+    document.getElementById('progbar').style.width=(100*n/steps.length)+'%';
+  }
+  upd();
+})();
+</script>
+
+</body>
+</html>
