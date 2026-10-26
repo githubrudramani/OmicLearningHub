@@ -9,7 +9,7 @@ Hands-on bioinformatics learning hub. Each module explains how the technology de
 | 1 · Spatial | Xenium spatial transcriptomics: platform comparison, Seurat, Harmony, Banksy, niches | [xenium.html](https://githubrudramani.github.io/OmicLearningHub/xenium.html) |
 | 1b · Case study | Multi-slide Xenium TMA project: core detection, mouse as replicate, sketching, pseudobulk DE · [script](scripts/xenium_tma_case_study.R) · [RCTD reference builder](scripts/build_skin_rctd_reference.R) | [xenium.html#case-study](https://githubrudramani.github.io/OmicLearningHub/xenium.html#case-study) |
 | 2 · Bulk RNA-seq | limma-voom with TMM normalisation on GSE63310, plus MSigDB GSEA (all genes ranked by t) and ORA of significant genes · [GSEA script](scripts/rnaseq_gsea_msigdb.R) | [rnaseq.html](https://githubrudramani.github.io/OmicLearningHub/rnaseq.html) |
-| 3 · Single-cell | scRNA-seq with LogNormalize, Harmony integration, ScType + SingleR annotation | [scrnaseq.html](https://githubrudramani.github.io/OmicLearningHub/scrnaseq.html) |
+| 3 · Single-cell | scRNA-seq with LogNormalize, Harmony integration, ScType + SingleR annotation, CellTypist alternative · [CellTypist script](scripts/scrnaseq_celltypist.py) | [scrnaseq.html](https://githubrudramani.github.io/OmicLearningHub/scrnaseq.html) |
 
 Coming next: Visium HD · DNA-seq / WGS · ATAC-seq
 

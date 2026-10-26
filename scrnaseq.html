@@ -167,6 +167,12 @@ details.track[open] summary{margin-bottom:10px}
 dl.gloss{display:grid;grid-template-columns:minmax(150px,max-content) 1fr;gap:8px 20px;margin:0;font-size:.95rem}
 dl.gloss dt{font:600 .85rem var(--f-mono);color:var(--accent)}
 dl.gloss dd{margin:0}
+
+.cs-dl{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--accent);border-radius:var(--r);padding:16px 18px}
+.cs-dl h3{font-size:1.05rem;margin-bottom:4px}
+.cs-btns{display:flex;gap:10px;flex-wrap:wrap}
+.btn{font:600 .92rem var(--f-body);text-decoration:none;padding:9px 16px;border-radius:8px;background:var(--accent);color:var(--surface);border:1px solid var(--accent)}
+.btn.ghost{background:transparent;color:var(--accent)}
 footer{padding-block:32px 48px;border-top:1px solid var(--line);color:var(--muted);font-size:.88rem}
 
 @media (max-width:900px){
@@ -202,6 +208,7 @@ html{scroll-behavior:smooth}
       <a href="#platforms">Platforms</a>
       <a href="#harmony">Harmony explained</a>
       <a href="#pipeline">Pipeline</a>
+      <a href="#s13">CellTypist</a>
       <a href="#resources">Resources</a>
     </nav>
   </div>
@@ -213,7 +220,7 @@ html{scroll-behavior:smooth}
       <div>
         <p class="eyebrow">Learning hub · Module 3 · Single-cell</p>
         <h1>Single-cell RNA-seq with <em>Harmony</em> integration and cell-type annotation</h1>
-        <p class="lede">How single-cell sequencing developed, which platform to choose, how Harmony removes batch effects without erasing biology, and a full Seurat pipeline on real PBMC data. The pipeline uses LogNormalize (no SCTransform), Harmony integration, and automated annotation with ScType cross-checked against SingleR.</p>
+        <p class="lede">How single-cell sequencing developed, which platform to choose, how Harmony removes batch effects without erasing biology, and a full Seurat pipeline on real PBMC data. The pipeline uses LogNormalize (no SCTransform), Harmony integration, and automated annotation with ScType cross-checked against SingleR, with CellTypist as an alternative.</p>
         <div class="modules" aria-label="Learning modules">
           <a class="chip" href="xenium.html">Spatial · Xenium</a>
           <a class="chip" href="rnaseq.html">RNA-seq · limma</a>
@@ -336,7 +343,7 @@ html{scroll-behavior:smooth}
 
       <div class="pipe-layout">
         <nav class="toc" aria-label="Pipeline steps" id="toc">
-          <p class="prog" id="progtxt">0 of 14 steps done</p>
+          <p class="prog" id="progtxt">0 of 15 steps done</p>
           <div class="bar"><i id="progbar"></i></div>
         </nav>
 
@@ -452,7 +459,7 @@ ifnb &lt;- RunHarmony(ifnb, group.by.vars = "stim", reduction.use = "pca",
 
 <span class="c"># several batch variables, e.g. sample and chemistry:</span>
 <span class="c"># RunHarmony(obj, group.by.vars = c("sample", "chemistry"), theta = c(2, 1))</span></pre></div>
-            <div class="callout"><b>Which batch?</b>Correct for <em>technical</em> variables (sample, lane, chemistry, donor). If you correct for your biological condition, as we do here for teaching, you must test condition effects later on the uncorrected data. Step 13 does that.</div>
+            <div class="callout"><b>Which batch?</b>Correct for <em>technical</em> variables (sample, lane, chemistry, donor). If you correct for your biological condition, as we do here for teaching, you must test condition effects later on the uncorrected data. Step 14 does that.</div>
           </article>
 
           <article class="step" id="s9" data-title="Cluster &amp; UMAP">
@@ -550,11 +557,66 @@ ifnb$celltype &lt;- ifnb$sctype
 <span class="c"># e.g. ifnb$celltype[ifnb$harmony_clusters == "7"] &lt;- "pDC"</span>
 Idents(ifnb) &lt;- "celltype"
 DimPlot(ifnb, reduction = "umap.harmony", label = TRUE, repel = TRUE) + NoLegend()</pre></div>
-            <div class="callout new"><b>Also</b>Azimuth (<code>RunAzimuth(ifnb, reference = "pbmcref")</code>) maps cells to a Seurat reference atlas. In Python, CellTypist offers many pre-trained immune and tissue models. Use at least two lines of evidence for every label.</div>
+            <div class="callout new"><b>Also</b>Azimuth (<code>RunAzimuth(ifnb, reference = "pbmcref")</code>) maps cells to a Seurat reference atlas. For a third, independent opinion, step 13 adds CellTypist. Use at least two lines of evidence for every label.</div>
           </article>
 
-          <article class="step" id="s13" data-title="Condition DE">
-            <div class="step-head"><span class="num">13</span><div><p class="kind">Biology</p><h3>Compare conditions within each cell type</h3></div><label class="done-toggle"><input type="checkbox" id="d-s13">Done</label></div>
+                    <article class="step" id="s13" data-title="Alternative: CellTypist">
+            <div class="step-head"><span class="num">13</span><div><p class="kind">Annotation · alternative</p><h3>Annotate with CellTypist</h3></div><label class="done-toggle"><input type="checkbox" id="d-s13">Done</label></div>
+            <p class="why"><a href="https://www.celltypist.org/" target="_blank" rel="noopener">CellTypist</a> (Domínguez Conde et al., Science 2022) predicts cell types with logistic-regression models pre-trained on large curated atlases, such as the immune models covering ~100 fine immune types across tissues. It gives every cell a label and a <strong>confidence score</strong>. With <strong>majority voting</strong>, it then gives each cluster the label most of its cells received; we pass our Harmony clusters for that. It runs in Python, so the workflow is: export from Seurat, annotate, import back.</p>
+
+            <div class="code"><span class="lang">R · 1. export counts and Harmony clusters</span><button type="button">Copy</button><pre>dir.create("celltypist", showWarnings = FALSE)
+counts &lt;- LayerData(ifnb, assay = "RNA", layer = "counts")     <span class="c"># raw counts, layers joined (step 09)</span>
+Matrix::writeMM(counts, "celltypist/counts.mtx")
+writeLines(rownames(counts), "celltypist/genes.txt")
+writeLines(colnames(counts), "celltypist/cells.txt")
+write.csv(data.frame(cell = colnames(ifnb), cluster = ifnb$harmony_clusters),
+          "celltypist/clusters.csv", row.names = FALSE)</pre></div>
+
+            <div class="code"><span class="lang">Shell · 2. run CellTypist</span><button type="button">Copy</button><pre>pip install celltypist scanpy
+python scripts/scrnaseq_celltypist.py --indir celltypist \
+       --models Immune_All_Low.pkl Immune_All_High.pkl
+<span class="c"># Low = ~100 fine immune types; High = ~30 broad types.</span>
+<span class="c"># The script normalises to log1p(CP10k) (the input CellTypist expects; same as</span>
+<span class="c"># Seurat LogNormalize), runs majority voting on your clusters and writes</span>
+<span class="c"># celltypist/celltypist_&lt;model&gt;.csv: predicted_labels, majority_voting, conf_score</span></pre></div>
+
+            <div class="code"><span class="lang">R · 3. import and compare</span><button type="button">Copy</button><pre>ct &lt;- read.csv("celltypist/celltypist_Immune_All_Low.csv", row.names = 1)
+ifnb$celltypist      &lt;- ct[colnames(ifnb), "majority_voting"]
+ifnb$celltypist_conf &lt;- ct[colnames(ifnb), "conf_score"]
+
+DimPlot(ifnb, reduction = "umap.harmony", group.by = "celltypist",
+        label = TRUE, repel = TRUE) + NoLegend()
+FeaturePlot(ifnb, "celltypist_conf", reduction = "umap.harmony")    <span class="c"># low = uncertain</span>
+
+table(CellTypist = ifnb$celltypist, ScType    = ifnb$sctype)
+table(CellTypist = ifnb$celltypist, Published = ifnb$seurat_annotations)</pre></div>
+
+            <div class="flav" style="margin-top:0"><table style="min-width:640px">
+              <thead><tr><th>Method</th><th>Evidence</th><th>Strengths</th><th>Limitations</th></tr></thead>
+              <tbody>
+                <tr><td>ScType (step 12)</td><td>Curated positive and negative marker genes</td><td>Fast, transparent, many tissues, R</td><td>Only as good as its marker lists; per cluster</td></tr>
+                <tr><td>SingleR (step 12)</td><td>Correlation with labelled reference profiles</td><td>Per cell; any reference you supply</td><td>Reference must match your tissue</td></tr>
+                <tr><td><strong>CellTypist</strong></td><td>Pre-trained classifier on large atlases</td><td>Fine immune subtypes, confidence scores, majority voting; you can train your own model</td><td>Python step; models mostly human, so check one exists for your tissue and species</td></tr>
+                <tr><td>Azimuth</td><td>Mapping onto a Seurat reference atlas</td><td>Hierarchical labels, R</td><td>Limited set of references</td></tr>
+              </tbody>
+            </table></div>
+
+            <div class="callout"><b>Good to know</b>Human PBMC data like ifnb suit <code>Immune_All_Low/High</code>; list all models with <code>celltypist.models.models_description()</code>. Model files download from the CellTypist server on first use, so that run needs internet. To use a model file of your own, give it with a path (<code>./my_model.pkl</code>); the script handles this, because CellTypist treats a bare name as a built-in model. If <code>celltypist.train()</code> fails with "unexpected keyword argument 'multi_class'", install <code>scikit-learn&lt;1.7</code>.</div>
+            <div class="check"><b>Decide</b>Where CellTypist, ScType and the markers from step 11 agree, keep the label. Where they disagree, or <code>conf_score</code> is low, check the DotPlot before naming the cluster. CellTypist's finer labels (e.g. naive vs. memory CD4) are worth keeping when the markers support them.</div>
+            <div class="cs-dl">
+              <div>
+                <h3>CellTypist script</h3>
+                <p class="muted">Python, ~80 lines. Tested end to end (R export → CellTypist → R import) on simulated data with a trained model: 100% of cells correctly labelled after majority voting.</p>
+              </div>
+              <div class="cs-btns">
+                <a class="btn" href="https://github.com/githubrudramani/OmicLearningHub/blob/main/scripts/scrnaseq_celltypist.py" target="_blank" rel="noopener">View script</a>
+                <a class="btn ghost" href="https://raw.githubusercontent.com/githubrudramani/OmicLearningHub/main/scripts/scrnaseq_celltypist.py" target="_blank" rel="noopener">Raw .py file</a>
+              </div>
+            </div>
+          </article>
+
+<article class="step" id="s14" data-title="Condition DE">
+            <div class="step-head"><span class="num">14</span><div><p class="kind">Biology</p><h3>Compare conditions within each cell type</h3></div><label class="done-toggle"><input type="checkbox" id="d-s14">Done</label></div>
             <p class="why">Integration helped us find matching cell types; now test the stimulation within each one. Tests use the normalised expression values, never the Harmony embedding. With biological replicates, use pseudobulk: sum counts per sample and cell type, then run limma-voom with TMM, exactly as in Module 2.</p>
             <div class="code"><span class="lang">R · teaching (ifnb has no donor IDs)</span><button type="button">Copy</button><pre>ifnb$celltype.stim &lt;- paste(ifnb$celltype, ifnb$stim, sep = "_")
 Idents(ifnb) &lt;- "celltype.stim"
@@ -580,8 +642,8 @@ topTable(fit, coef = 2, n = 20)</pre></div>
             <div class="callout warn"><b>Don't</b>Treating each cell as an independent replicate inflates significance hugely (pseudoreplication). For publication-grade condition comparisons, use pseudobulk across donors.</div>
           </article>
 
-          <article class="step" id="s14" data-title="Save &amp; report">
-            <div class="step-head"><span class="num">14</span><div><p class="kind">Deliver</p><h3>Save, export and report</h3></div><label class="done-toggle"><input type="checkbox" id="d-s14">Done</label></div>
+          <article class="step" id="s15" data-title="Save &amp; report">
+            <div class="step-head"><span class="num">15</span><div><p class="kind">Deliver</p><h3>Save, export and report</h3></div><label class="done-toggle"><input type="checkbox" id="d-s15">Done</label></div>
             <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>saveRDS(ifnb, "ifnb_harmony_annotated.rds")
 write.csv(markers, "cluster_markers.csv", row.names = FALSE)
 write.csv(ifnb@meta.data, "cell_metadata.csv")
@@ -590,7 +652,7 @@ writeLines(capture.output(sessionInfo()), "sessionInfo.txt")
 
 <span class="c"># optional: hand off to Python (scanpy, CellTypist, cellxgene)</span>
 <span class="c"># SeuratDisk / anndataR can convert the object to .h5ad</span></pre></div>
-            <div class="check"><b>Report</b>QC thresholds and cells removed · doublet method · normalisation (LogNormalize, scale factor 10,000) · number of variable genes and PCs · Harmony variables and theta · clustering resolution · annotation evidence (markers + ScType + SingleR) · package versions.</div>
+            <div class="check"><b>Report</b>QC thresholds and cells removed · doublet method · normalisation (LogNormalize, scale factor 10,000) · number of variable genes and PCs · Harmony variables and theta · clustering resolution · annotation evidence (markers + ScType + SingleR / CellTypist, with model name and version) · package versions.</div>
             <details class="track">
               <summary>Python track: the same workflow in scanpy</summary>
               <div class="code"><span class="lang">Python</span><button type="button">Copy</button><pre>import scanpy as sc, celltypist
