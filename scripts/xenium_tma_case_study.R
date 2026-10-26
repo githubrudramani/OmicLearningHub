@@ -23,7 +23,7 @@ set.seed(1)
 
 # Optional steps (FALSE = skip; switch on one at a time after the first run)
 RUN_RCTD   <- FALSE   # 8b: reference-based labels (package spacexr)
-REF_RDS    <- "path/to/your_scRNAseq_reference.rds"   # Seurat object, same species/tissue
+REF_RDS    <- "path/to/your_scRNAseq_reference.rds"   # build one with scripts/build_skin_rctd_reference.R
 REF_CT_COL <- "celltype"   # the cell-type column in that object
 RCTD_ALL_CELLS <- FALSE  # FALSE = sketch cells only (fast); TRUE = every cell (hours)
 RUN_ZOOM   <- TRUE    # 9b: zoomed cores with cell outlines (Seurat Crop)
