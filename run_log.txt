@@ -1,0 +1,99 @@
+trying URL 'https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE63310&format=file'
+Content type 'application/x-tar' length 1996800 bytes (1.9 MB)
+==================================================
+downloaded 1.9 MB
+
+[match] genes in raw count table
+[match] genes kept by filterByExpr
+[match] TMM normalisation factors
+[match] eBayes DE counts (Down/NotSig/Up x 3 contrasts)
+[match] treat |log2FC|>1 DE counts
+null device 
+          1 
+Using human MSigDB with ortholog mapping to mouse. Use `db_species = "MM"` for mouse-native gene sets.
+This message is displayed once per session.
+Downloading gene sets (first use only, may take a few minutes)...
+Warning message:
+In file.rename(tmp_path, zip_path) :
+  cannot rename file '/tmp/RtmpmIOkn0/fileb043dbd7acf.zip' to '/home/runner/.cache/R/msigdbr/msigdb.2026.1.zip', reason 'Invalid cross-device link'
+Hallmark Reactome    GO_BP 
+      50     1839     7535 
+16258 ranked genes; significant (adj.P < 0.05): 4800 up, 4561 down
+Hallmark  GSEA all genes:  20 sets padj<0.05 | ORA up/down:   7/ 11 | GSEA sig-only:  19
+Reactome  GSEA all genes: 155 sets padj<0.05 | ORA up/down: 109/ 24 | GSEA sig-only: 157
+GO_BP     GSEA all genes: 512 sets padj<0.05 | ORA up/down: 349/201 | GSEA sig-only: 503
+                                    pathway   NES.all     padj.all   NES.sig
+                       HALLMARK_E2F_TARGETS  2.725451 2.839890e-22  3.105641
+                    HALLMARK_G2M_CHECKPOINT  2.673000 1.320027e-20  3.184478
+ HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION  2.654159 6.099491e-20  3.236867
+           HALLMARK_ESTROGEN_RESPONSE_EARLY -2.090086 1.440374e-08 -2.492305
+                   HALLMARK_MITOTIC_SPINDLE  1.897622 6.498983e-06  2.237938
+                    HALLMARK_MYC_TARGETS_V1  1.821853 3.594028e-05  1.903419
+           HALLMARK_TNFA_SIGNALING_VIA_NFKB -1.808176 5.259195e-05 -1.996195
+         HALLMARK_INTERFERON_GAMMA_RESPONSE -1.773209 8.510702e-05 -1.992127
+                   HALLMARK_APICAL_JUNCTION  1.727525 3.128822e-04  1.901457
+                        HALLMARK_COMPLEMENT -1.686617 6.415877e-04 -1.966387
+         HALLMARK_INTERFERON_ALPHA_RESPONSE -1.798448 6.415877e-04 -1.835395
+                    HALLMARK_MYC_TARGETS_V2  1.906175 6.415877e-04  1.874886
+                 HALLMARK_PROTEIN_SECRETION -1.614196 5.427460e-03 -1.443542
+            HALLMARK_ESTROGEN_RESPONSE_LATE -1.551816 5.714562e-03 -1.744057
+                         HALLMARK_APOPTOSIS -1.495831 8.871500e-03 -1.627913
+     padj.sig  p.adjust.up p.adjust.down
+ 1.079078e-17 4.400086e-25  1.000000e+00
+ 6.297414e-18 2.397811e-13  1.000000e+00
+ 1.218189e-19 2.397811e-13  1.000000e+00
+ 7.988446e-10 9.999952e-01  3.914237e-06
+ 4.365937e-06 7.024583e-01  1.000000e+00
+ 9.224222e-04 3.320550e-03  1.000000e+00
+ 1.675017e-04 9.999952e-01  1.615183e-06
+ 1.895567e-04 9.999952e-01  2.313423e-04
+ 4.524049e-04 7.811249e-04  1.000000e+00
+ 2.815250e-04 9.999952e-01  2.609721e-02
+ 4.066044e-03 9.999952e-01  2.998420e-04
+ 1.600767e-02 1.775426e-03  1.000000e+00
+ 1.127655e-01 9.999952e-01  1.665583e-03
+ 2.959411e-03 9.999952e-01  4.788931e-03
+ 2.038202e-02 9.999952e-01  1.052236e-02
+Done. Results in /home/runner/work/OmicLearningHub/OmicLearningHub/run-out/output/gsea_results
+                                           check
+                        genes in raw count table
+                      genes kept by filterByExpr
+                       TMM normalisation factors
+ eBayes DE counts (Down/NotSig/Up x 3 contrasts)
+                      treat |log2FC|>1 DE counts
+                                              expected
+                                                 27179
+                                                 16624
+ 0.894 1.025 1.046 1.046 1.016 0.922 0.996 1.086 0.984
+         4648 7113 4863 4927 7026 4671 3135 10972 2517
+         1632 12976 2016 1777 12790 2057 224 16210 190
+                                              observed status
+                                                 27179  match
+                                                 16624  match
+ 0.894 1.025 1.046 1.046 1.016 0.922 0.996 1.086 0.984  match
+         4646 7118 4860 4936 7008 4680 3141 10953 2530  match
+         1633 12977 2014 1777 12793 2054 223 16211 190  match
+Done in 2.2 min. Results in run-out/output
+	Command being timed: "Rscript rnaseq-example/run_rnaseq_limma.R run-out/output"
+	User time (seconds): 117.36
+	System time (seconds): 4.08
+	Percent of CPU this job got: 92%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 2:11.47
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1850132
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 134
+	Minor (reclaiming a frame) page faults: 1592947
+	Voluntary context switches: 1012
+	Involuntary context switches: 636
+	Swaps: 0
+	File system inputs: 32360
+	File system outputs: 226536
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
