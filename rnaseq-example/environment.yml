@@ -1,20 +1,21 @@
 # Versioned environment for OmicLearningHub Module 2 (bulk RNA-seq).
 # Create:  micromamba create -f environment.yml   (or: conda env create -f environment.yml)
 # Use:     micromamba activate omiclearninghub-rnaseq
-# These are the versions the module was tested with (R 4.5, Bioconductor 3.22).
+# R is pinned; the solver picks one consistent Bioconductor release for it.
+# The exact versions of the last verified run are in environment_lock.yml.
 name: omiclearninghub-rnaseq
 channels:
   - conda-forge
   - bioconda
 dependencies:
   - r-base=4.5
-  - bioconductor-limma=3.68
-  - bioconductor-edger=4.10
-  - bioconductor-glimma=2.20
-  - bioconductor-org.mm.eg.db=3.22
-  - bioconductor-fgsea=1.36
-  - bioconductor-clusterprofiler=4.18
-  - r-msigdbr=26.1
+  - bioconductor-limma
+  - bioconductor-edger
+  - bioconductor-glimma
+  - bioconductor-org.mm.eg.db
+  - bioconductor-fgsea
+  - bioconductor-clusterprofiler
+  - r-msigdbr
   - r-data.table
   - r-ggplot2
   - r-pheatmap

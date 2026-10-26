@@ -31,18 +31,19 @@ jobs:
         if: always()
         shell: bash -el {0}
         run: |
+          mkdir -p run-out
           micromamba env export > run-out/environment_lock.yml || true
           {
             echo "outcome: ${{ steps.run.outcome }}"
             echo "commit: ${GITHUB_SHA}"
             echo "runner: $(lsb_release -ds 2>/dev/null), $(nproc) CPUs, $(free -g | awk '/Mem:/{print $2}') GB RAM"
-            grep -E "Maximum resident set size|Elapsed \(wall clock\)" run-out/run_log.txt | sed 's/^\s*//'
+            grep -E "Maximum resident set size|Elapsed \(wall clock\)" run-out/run_log.txt 2>/dev/null | sed 's/^\s*//' || true
           } > run-out/ci_status.txt
           cat run-out/ci_status.txt
       - name: Publish results to branch rnaseq-run
         if: always()
         run: |
-          rm -rf run-out/output/data
+          mkdir -p run-out && rm -rf run-out/output/data
           cd run-out
           git init -q -b rnaseq-run
           git config user.name "github-actions[bot]"
