@@ -23,10 +23,12 @@ jobs:
         id: run
         continue-on-error: true
         shell: bash -el {0}
+        # no explicit `exit`: in this login shell it runs ~/.bash_logout,
+        # which returns 1 on Ubuntu runners and masks R's real exit code
         run: |
+          set -o pipefail
           mkdir -p run-out
           /usr/bin/time -v Rscript rnaseq-example/run_rnaseq_limma.R run-out/output 2>&1 | tee run-out/run_log.txt
-          exit ${PIPESTATUS[0]}
       - name: Record environment and status
         if: always()
         shell: bash -el {0}
