@@ -1,0 +1,54 @@
+name: RNA-seq module · full run on GSE63310
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["rnaseq-example/**", "scripts/rnaseq_gsea_msigdb.R", ".github/workflows/rnaseq-example.yml"]
+permissions:
+  contents: write
+concurrency:
+  group: rnaseq-example
+  cancel-in-progress: true
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: rnaseq-example/environment.yml
+          cache-environment: true
+      - name: Run the module end to end
+        id: run
+        continue-on-error: true
+        shell: bash -el {0}
+        run: |
+          mkdir -p run-out
+          /usr/bin/time -v Rscript rnaseq-example/run_rnaseq_limma.R run-out/output 2>&1 | tee run-out/run_log.txt
+          exit ${PIPESTATUS[0]}
+      - name: Record environment and status
+        if: always()
+        shell: bash -el {0}
+        run: |
+          micromamba env export > run-out/environment_lock.yml || true
+          {
+            echo "outcome: ${{ steps.run.outcome }}"
+            echo "commit: ${GITHUB_SHA}"
+            echo "runner: $(lsb_release -ds 2>/dev/null), $(nproc) CPUs, $(free -g | awk '/Mem:/{print $2}') GB RAM"
+            grep -E "Maximum resident set size|Elapsed \(wall clock\)" run-out/run_log.txt | sed 's/^\s*//'
+          } > run-out/ci_status.txt
+          cat run-out/ci_status.txt
+      - name: Publish results to branch rnaseq-run
+        if: always()
+        run: |
+          rm -rf run-out/output/data
+          cd run-out
+          git init -q -b rnaseq-run
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -qm "RNA-seq module run for ${GITHUB_SHA::7} (${{ steps.run.outcome }})"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" rnaseq-run
+      - name: Fail the job if the run failed
+        if: steps.run.outcome == 'failure'
+        run: exit 1
