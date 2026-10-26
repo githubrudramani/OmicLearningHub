@@ -167,6 +167,18 @@ details.track[open] summary{margin-bottom:10px}
 dl.gloss{display:grid;grid-template-columns:minmax(150px,max-content) 1fr;gap:8px 20px;margin:0;font-size:.95rem}
 dl.gloss dt{font:600 .85rem var(--f-mono);color:var(--accent)}
 dl.gloss dd{margin:0}
+
+/* GSEA demo + shared boxes */
+.gsea-demo{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px;align-items:center;background:var(--sunk);border-radius:8px;padding:14px}
+.gsea-demo canvas{width:100%;aspect-ratio:16/9;display:block;background:var(--plot);border-radius:6px}
+.gsea-ctrl{display:grid;gap:12px;font-size:.93rem}
+.gsea-ctrl .seg{flex-wrap:wrap}
+.cs-dl{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--accent);border-radius:var(--r);padding:16px 18px}
+.cs-dl h3{font-size:1.05rem;margin-bottom:4px}
+.cs-btns{display:flex;gap:10px;flex-wrap:wrap}
+.btn{font:600 .92rem var(--f-body);text-decoration:none;padding:9px 16px;border-radius:8px;background:var(--accent);color:var(--surface);border:1px solid var(--accent)}
+.btn.ghost{background:transparent;color:var(--accent)}
+@media (max-width:700px){.gsea-demo{grid-template-columns:1fr}}
 footer{padding-block:32px 48px;border-top:1px solid var(--line);color:var(--muted);font-size:.88rem}
 
 @media (max-width:900px){
@@ -202,6 +214,7 @@ html{scroll-behavior:smooth}
       <a href="#types">Assay types</a>
       <a href="#tmm">TMM explained</a>
       <a href="#pipeline">limma-voom pipeline</a>
+      <a href="#s12">GSEA</a>
       <a href="#resources">Resources</a>
     </nav>
   </div>
@@ -339,7 +352,7 @@ html{scroll-behavior:smooth}
 
       <div class="pipe-layout">
         <nav class="toc" aria-label="Pipeline steps" id="toc">
-          <p class="prog" id="progtxt">0 of 12 steps done</p>
+          <p class="prog" id="progtxt">0 of 14 steps done</p>
           <div class="bar"><i id="progbar"></i></div>
         </nav>
 
@@ -550,8 +563,90 @@ barcodeplot(efit$t[, "BasalvsLP"],
             <div class="callout"><b>Also</b>Use <code>fry()</code> for a few hand-picked sets, and <code>goana()</code> / <code>kegga()</code> for over-representation of your DE gene list.</div>
           </article>
 
-          <article class="step" id="s12" data-title="Report &amp; share">
-            <div class="step-head"><span class="num">12</span><div><p class="kind">Deliver</p><h3>Export results and record the analysis</h3></div><label class="done-toggle"><input type="checkbox" id="d-s12">Done</label></div>
+          <article class="step" id="s12" data-title="GSEA · all genes">
+            <div class="step-head"><span class="num">12</span><div><p class="kind">Biology · ranked GSEA</p><h3>GSEA with MSigDB: all genes ranked by the moderated t</h3></div><label class="done-toggle"><input type="checkbox" id="d-s12">Done</label></div>
+            <p class="why">Rank every tested gene by limma's moderated t-statistic, which combines fold change, variance and sample size. Then ask whether a gene set's members pile up at the top (up-regulated) or the bottom (down-regulated) of the list. No cut-off is needed, so GSEA detects pathways where many genes shift a little, even if none passes FDR on its own.</p>
+
+            <div class="gsea-demo">
+              <canvas id="gseaCv" aria-label="GSEA running enrichment score for a simulated gene set, all genes or significant genes only"></canvas>
+              <div class="gsea-ctrl">
+                <div class="seg" role="group" aria-label="Ranked list">
+                  <button type="button" data-g="all" aria-pressed="true">All genes ranked by t</button>
+                  <button type="button" data-g="sig" aria-pressed="false">Significant genes only</button>
+                </div>
+                <p class="muted" id="gseaTxt"></p>
+              </div>
+            </div>
+
+            <div class="code"><span class="lang">R · ranks + gene sets</span><button type="button">Copy</button><pre>library(fgsea); library(msigdbr); library(data.table)
+<span class="c"># MSigDB collections (msigdbr ≥ 10: collection/subcollection; older: category/subcategory)</span>
+<span class="c"># recent msigdbr downloads the gene sets on first use, so that run needs internet</span>
+hall &lt;- msigdbr(species = "Mus musculus", collection = "H")
+reac &lt;- msigdbr(species = "Mus musculus", collection = "C2", subcollection = "CP:REACTOME")
+gobp &lt;- msigdbr(species = "Mus musculus", collection = "C5", subcollection = "GO:BP")
+pathways &lt;- split(hall$gene_symbol, hall$gs_name)
+
+<span class="c"># rank ALL tested genes by the moderated t (from eBayes, step 09)</span>
+tt &lt;- topTable(efit, coef = "BasalvsLP", number = Inf)
+tt &lt;- tt[!is.na(tt$SYMBOL), ]
+tt &lt;- tt[order(-abs(tt$t)), ]; tt &lt;- tt[!duplicated(tt$SYMBOL), ]   <span class="c"># one value per symbol</span>
+ranks &lt;- sort(setNames(tt$t, tt$SYMBOL), decreasing = TRUE)</pre></div>
+            <div class="code"><span class="lang">R · run GSEA</span><button type="button">Copy</button><pre>gsea_all &lt;- fgsea(pathways, ranks, minSize = 15, maxSize = 500)
+gsea_all &lt;- gsea_all[order(padj, -abs(NES))]
+head(gsea_all[, .(pathway, NES, padj, size)], 10)
+fwrite(gsea_all, "BasalvsLP_Hallmark_GSEA_allgenes.tsv", sep = "\t", sep2 = c("", ",", ""))
+
+<span class="c"># running-score plot for the top set</span>
+plotEnrichment(pathways[[gsea_all$pathway[1]]], ranks) + ggplot2::ggtitle(gsea_all$pathway[1])
+
+<span class="c"># clusterProfiler alternative (same idea, different API)</span>
+<span class="c"># clusterProfiler::GSEA(ranks, TERM2GENE = hall[, c("gs_name", "gene_symbol")], eps = 0)</span></pre></div>
+            <div class="check"><b>Read it</b><strong>NES</strong> &gt; 0: the set is enriched among genes up in Basal; NES &lt; 0: enriched among genes up in LP. Use <code>padj</code> (FDR) &lt; 0.05. The <code>leadingEdge</code> column lists the genes driving the score, which are the ones to plot and follow up.</div>
+            <div class="callout"><b>Why t, not logFC?</b>Ranking by logFC alone lets noisy, low-count genes with large fold changes dominate. The moderated t down-weights them, so it is the usual choice after limma.</div>
+          </article>
+
+          <article class="step" id="s13" data-title="Significant genes only">
+            <div class="step-head"><span class="num">13</span><div><p class="kind">Biology · cut-off based</p><h3>Significant genes only (adj. P &lt; 0.05): ORA and restricted GSEA</h3></div><label class="done-toggle"><input type="checkbox" id="d-s13">Done</label></div>
+            <p class="why">Sometimes you want to ask what your DE gene list is about. With a cut-off list, the standard test is <strong>over-representation analysis (ORA)</strong>. Are up-regulated (or down-regulated) genes found in a set more often than chance, compared with all tested genes? Run up and down separately; pooling them hides direction.</p>
+            <div class="code"><span class="lang">R · ORA of significant genes</span><button type="button">Copy</button><pre>library(clusterProfiler)
+t2g      &lt;- hall[, c("gs_name", "gene_symbol")]
+universe &lt;- names(ranks)                                  <span class="c"># every tested gene, not the genome</span>
+sig_up   &lt;- tt$SYMBOL[tt$adj.P.Val &lt; 0.05 &amp; tt$logFC &gt; 0]
+sig_down &lt;- tt$SYMBOL[tt$adj.P.Val &lt; 0.05 &amp; tt$logFC &lt; 0]
+
+ora_up   &lt;- enricher(sig_up,   TERM2GENE = t2g, universe = universe,
+                     minGSSize = 15, maxGSSize = 500)
+ora_down &lt;- enricher(sig_down, TERM2GENE = t2g, universe = universe,
+                     minGSSize = 15, maxGSSize = 500)
+head(as.data.frame(ora_up)[, c("ID", "GeneRatio", "BgRatio", "p.adjust")])
+dotplot(ora_up, showCategory = 15) + ggplot2::ggtitle("Up in Basal: Hallmark ORA")</pre></div>
+            <div class="code"><span class="lang">R · GSEA restricted to significant genes</span><button type="button">Copy</button><pre>ranks_sig &lt;- ranks[names(ranks) %in% c(sig_up, sig_down)]
+gsea_sig  &lt;- fgsea(pathways, ranks_sig, minSize = 10, maxSize = 500)
+gsea_sig[order(padj)][1:10, .(pathway, NES, padj, size)]</pre></div>
+            <div class="callout warn"><b>Read with care</b>When every gene in the list is already significant, GSEA no longer asks "is this pathway changed?". It asks "do this pathway's DE genes lean up or down?". Sets also need ≥ 10 significant members, so many drop out. Use it as a direction summary next to ORA, not as a replacement for the all-genes GSEA.</div>
+            <div class="flav" style="margin-top:0"><table style="min-width:640px">
+              <thead><tr><th>Approach</th><th>Input</th><th>Question answered</th><th>Use when</th></tr></thead>
+              <tbody>
+                <tr><td>GSEA, all genes</td><td>Every gene, ranked by t</td><td>Is the set shifted up or down as a whole?</td><td>Default. Catches subtle, coordinated changes</td></tr>
+                <tr><td>ORA, significant genes</td><td>Up or down list + universe</td><td>Are DE genes over-represented in the set?</td><td>Summarising a DE list; strong effects</td></tr>
+                <tr><td>GSEA, significant only</td><td>DE genes, ranked by t</td><td>Do the set's DE genes lean up or down?</td><td>Exploratory direction check</td></tr>
+                <tr><td>camera (step 11)</td><td>voom data + design</td><td>Is the set changed, allowing for gene correlation?</td><td>Most conservative; good for confirming</td></tr>
+              </tbody>
+            </table></div>
+            <div class="cs-dl">
+              <div>
+                <h3>Full GSEA script</h3>
+                <p class="muted">Runs all three approaches for Hallmark, Reactome and GO:BP, and writes tables, NES plots, enrichment plots and a method-comparison table. Tested on simulated limma data with planted gene sets.</p>
+              </div>
+              <div class="cs-btns">
+                <a class="btn" href="https://github.com/githubrudramani/OmicLearningHub/blob/main/scripts/rnaseq_gsea_msigdb.R" target="_blank" rel="noopener">View script</a>
+                <a class="btn ghost" href="https://raw.githubusercontent.com/githubrudramani/OmicLearningHub/main/scripts/rnaseq_gsea_msigdb.R" target="_blank" rel="noopener">Raw .R file</a>
+              </div>
+            </div>
+          </article>
+
+          <article class="step" id="s14" data-title="Report &amp; share">
+            <div class="step-head"><span class="num">14</span><div><p class="kind">Deliver</p><h3>Export results and record the analysis</h3></div><label class="done-toggle"><input type="checkbox" id="d-s14">Done</label></div>
             <p class="why">Save complete tables (not just the top hits), interactive plots, and the session details. Anyone should be able to rerun your analysis from these files.</p>
             <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>for (k in colnames(contr.matrix)) {
   write.csv(topTreat(tfit, coef = k, n = Inf), paste0("DE_", k, "_treat.csv"))
@@ -708,8 +803,8 @@ writeLines(capture.output(sessionInfo()), "sessionInfo.txt")</pre></div>
     mEl.style.color=Math.abs(med)>0.15?css('--bad'):css('--good');
     document.getElementById('tmmF').textContent=Math.pow(2,tmm).toFixed(2);
   }
-  document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{
-    mode=b.dataset.m; document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); drawMA()}));
+  document.querySelectorAll('.seg button[data-m]').forEach(b=>b.addEventListener('click',()=>{
+    mode=b.dataset.m; document.querySelectorAll('.seg button[data-m]').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); drawMA()}));
   ['pDE','fc'].forEach(id=>document.getElementById(id).addEventListener('input',drawMA));
 
   function all(){drawVolcano();drawMA()}
@@ -717,6 +812,45 @@ writeLines(capture.output(sessionInfo()), "sessionInfo.txt")</pre></div>
   try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',all)}catch(e){}
   new MutationObserver(all).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 
+
+  /* GSEA running-sum demo */
+  (function(){
+    const cv=document.getElementById('gseaCv'); if(!cv) return;
+    const r=rng(21), N=3000, tvals=[];
+    for(let i=0;i<N;i++){const de=r()<0.08; tvals.push(de?(r()<.5?-1:1)*(4+Math.abs(gauss(r))*3):gauss(r)*1.2)}
+    const genes=tvals.map((t,i)=>({t,i})).sort((a,b)=>b.t-a.t);
+    // gene set: 80 members, mildly shifted up (most not individually significant) + some DE members
+    const member=new Set(); genes.forEach((g,rank)=>{const p=0.025+0.06*Math.max(0,1-rank/1400); if(r()<p) member.add(g.i)});
+    let mode='all';
+    function draw(){
+      if(!cv.getBoundingClientRect().width) return;
+      const list = mode==='all'?genes:genes.filter(g=>Math.abs(g.t)>=4);
+      const n=list.length, hits=list.filter(g=>member.has(g.i)), NR=hits.reduce((a,g)=>a+Math.abs(g.t),0), miss=1/(n-hits.length);
+      let run=0, es=0, esAt=0; const curve=[];
+      list.forEach((g,k)=>{run+= member.has(g.i)?Math.abs(g.t)/NR:-miss; curve.push(run); if(Math.abs(run)>Math.abs(es)){es=run;esAt=k}});
+      const {g,W,H}=setup(cv), L=36,R=10,T=12,B=40, ph=H-B-T-26;
+      g.fillStyle=css('--plot');g.fillRect(0,0,W,H);
+      const lo=Math.min(-0.15,...curve), hi=Math.max(0.15,...curve);
+      const sx=k=>L+k/(n-1)*(W-L-R), sy=v=>T+(hi-v)/(hi-lo)*ph;
+      g.strokeStyle=css('--grid');g.lineWidth=1;g.beginPath();g.moveTo(L,sy(0));g.lineTo(W-R,sy(0));g.stroke();
+      g.fillStyle=css('--muted');g.font='11px '+css('--f-mono');g.textAlign='right';
+      [hi,0,lo].forEach(v=>g.fillText(v.toFixed(2),L-5,sy(v)+4));
+      g.strokeStyle=css('--ch-green');g.lineWidth=2;g.beginPath();curve.forEach((v,k)=>k?g.lineTo(sx(k),sy(v)):g.moveTo(sx(k),sy(v)));g.stroke();
+      g.strokeStyle=css('--ch-mag');g.setLineDash([4,3]);g.beginPath();g.moveTo(sx(esAt),T);g.lineTo(sx(esAt),T+ph);g.stroke();g.setLineDash([]);
+      const ty=T+ph+6; g.strokeStyle=css('--ink');g.lineWidth=1;
+      list.forEach((gg,k)=>{if(member.has(gg.i)){g.beginPath();g.moveTo(sx(k),ty);g.lineTo(sx(k),ty+14);g.stroke()}});
+      const by=ty+18; const grad=g.createLinearGradient(L,0,W-R,0);grad.addColorStop(0,css('--up'));grad.addColorStop(.5,css('--grid'));grad.addColorStop(1,css('--down'));
+      g.fillStyle=grad;g.fillRect(L,by,W-L-R,6);
+      g.fillStyle=css('--muted');g.textAlign='left';g.fillText(mode==='all'?'rank 1 (highest t)':'sig. up',L,H-4);g.textAlign='right';g.fillText(mode==='all'?'rank '+n+' (lowest t)':'sig. down',W-R,H-4);
+      document.getElementById('gseaTxt').innerHTML = (mode==='all'
+        ? '<strong>'+n.toLocaleString()+' genes</strong>, '+hits.length+' in the set. Members drift toward the top, so the running score climbs to <strong>ES = '+es.toFixed(2)+'</strong>, even though most members are not significant on their own.'
+        : 'Only <strong>'+n+' significant genes</strong> remain, '+hits.length+' of them in the set. The score now only reflects whether those few lean up or down (<strong>ES = '+es.toFixed(2)+'</strong>). The many small shifts are gone.');
+    }
+    document.querySelectorAll('[data-g]').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.g;
+      document.querySelectorAll('[data-g]').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));draw()}));
+    draw(); addEventListener('resize',draw);
+    try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',draw)}catch(e){}
+  })();
   /* copy */
   document.querySelectorAll('.code button').forEach(b=>b.addEventListener('click',()=>{
     const pre=b.parentElement.querySelector('pre'); const ok=()=>{b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1400)};
