@@ -128,7 +128,11 @@ section{padding-block:56px;border-top:1px solid var(--line)}
 .toc a span:first-child{font:600 .78rem/1.7 var(--f-mono)}
 .steps{display:grid;gap:22px;min-width:0}
 .step{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px;display:grid;gap:14px;min-width:0;scroll-margin-top:90px}
-.step-head{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:start}
+.step{grid-template-columns:minmax(0,1fr)}
+.step>*{min-width:0}
+.step .why code{overflow-wrap:anywhere}
+.step-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:start}
+.step-head h3,.step-head .kind{overflow-wrap:anywhere}
 .num{font:700 1.5rem/1 var(--f-display);color:var(--accent);min-width:2ch;font-variant-numeric:tabular-nums}
 .step-head .kind{font:600 .7rem var(--f-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:4px}
 .done-toggle{display:flex;align-items:center;gap:6px;font:600 .8rem var(--f-body);color:var(--muted);cursor:pointer;white-space:nowrap}
@@ -176,7 +180,7 @@ footer{padding-block:32px 48px;border-top:1px solid var(--line);color:var(--mute
   .res-grid,.toc{grid-template-columns:1fr}
   .tabs{margin-left:0;width:100%}
   .step{padding:18px}
-  .step-head{grid-template-columns:auto 1fr}
+  .step-head{grid-template-columns:auto minmax(0,1fr)}
   .done-toggle{grid-column:2}
   .era{grid-template-columns:62px 22px minmax(0,1fr);gap:0 10px}
   .era .yr{font-size:.95rem}

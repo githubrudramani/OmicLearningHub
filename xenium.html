@@ -134,7 +134,11 @@ section{padding-block:56px;border-top:1px solid var(--line)}
 .toc a span:first-child{font:600 .78rem/1.7 var(--f-mono)}
 .steps{display:grid;gap:22px;min-width:0}
 .step{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px;display:grid;gap:14px;min-width:0;scroll-margin-top:90px}
-.step-head{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:start}
+.step{grid-template-columns:minmax(0,1fr)}
+.step>*{min-width:0}
+.step .why code{overflow-wrap:anywhere}
+.step-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:start}
+.step-head h3,.step-head .kind{overflow-wrap:anywhere}
 .num{font:700 1.5rem/1 var(--f-display);color:var(--accent);min-width:2ch;font-variant-numeric:tabular-nums}
 .step-head .kind{font:600 .7rem var(--f-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:4px}
 .done-toggle{display:flex;align-items:center;gap:6px;font:600 .8rem var(--f-body);color:var(--muted);cursor:pointer;white-space:nowrap}
@@ -174,6 +178,29 @@ dl.gloss{display:grid;grid-template-columns:minmax(140px,max-content) 1fr;gap:8p
 dl.gloss dt{font:600 .85rem var(--f-mono);color:var(--accent)}
 dl.gloss dd{margin:0}
 
+
+/* case study */
+.cs-layout{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:24px;align-items:center}
+.cs-design{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;min-width:0}
+.cs-design svg{width:100%;height:auto;display:block}
+.cs-points{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cs-points div{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:grid;gap:4px}
+.cs-points b{font:700 1.02rem var(--f-display)}
+.cs-points span{color:var(--muted);font-size:.9rem;line-height:1.45}
+.cs-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.cs-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:grid;gap:8px;align-content:start;min-width:0}
+.cs-card .k{font:600 .7rem var(--f-mono);text-transform:uppercase;letter-spacing:.1em}
+.cs-card h4{margin:0;font:700 1.05rem/1.25 var(--f-display)}
+.cs-card p:last-child{color:var(--muted);font-size:.94rem}
+.cs-code{display:grid;gap:14px}
+.cs-dl{margin-top:24px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--accent);border-radius:var(--r);padding:18px 20px}
+.cs-dl h3{font-size:1.1rem;margin-bottom:4px}
+.cs-btns{display:flex;gap:10px;flex-wrap:wrap}
+.btn{font:600 .92rem var(--f-body);text-decoration:none;padding:9px 16px;border-radius:8px;background:var(--accent);color:var(--surface);border:1px solid var(--accent)}
+.btn.ghost{background:transparent;color:var(--accent)}
+.cs-next{margin:0;padding-left:1.3em;display:grid;gap:6px;font-size:.95rem}
+@media (max-width:900px){.cs-layout{grid-template-columns:1fr}.cs-grid{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.cs-grid,.cs-points{grid-template-columns:1fr}}
 footer{padding-block:32px 48px;border-top:1px solid var(--line);color:var(--muted);font-size:.88rem}
 
 @media (max-width:900px){
@@ -188,7 +215,7 @@ footer{padding-block:32px 48px;border-top:1px solid var(--line);color:var(--mute
   .trend-grid,.res-grid,.pc,.toc{grid-template-columns:1fr}
   .tabs{margin-left:0;width:100%}
   .step{padding:18px}
-  .step-head{grid-template-columns:auto 1fr}
+  .step-head{grid-template-columns:auto minmax(0,1fr)}
   .done-toggle{grid-column:2}
   dl.gloss{grid-template-columns:1fr;gap:2px 0}
   dl.gloss dd{margin-bottom:8px}
@@ -207,6 +234,7 @@ html{scroll-behavior:smooth}
       <a href="#primer">Spatial omics</a>
       <a href="#platforms">Platforms</a>
       <a href="#pipeline">Xenium pipeline</a>
+      <a href="#case-study">Case study</a>
       <a href="#trends">What's new</a>
       <a href="#resources">Resources</a>
     </nav>
@@ -643,6 +671,128 @@ writeLines(capture.output(sessionInfo()), "sessionInfo.txt")</pre></div>
     </div>
   </section>
 
+  <!-- CASE STUDY -->
+  <section id="case-study">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Part 3b · Real-world case study</p>
+        <h2>Multi-slide TMA project: from two slides to per-mouse statistics</h2>
+        <p class="muted" style="max-width:74ch">The tutorial above analyses one tissue section. Real projects are messier. This case study is an anonymised pipeline from an actual project: two Xenium slides, each a tissue microarray (TMA) of mouse tissue cores, with one model per slide and several cores per mouse. It covers the decisions the tutorial doesn't, and the full script is ready to adapt.</p>
+      </div>
+
+      <div class="cs-layout">
+        <figure class="cs-design" aria-label="Study design: two slides, each with many cores, cores grouped by mouse">
+          <svg viewBox="0 0 420 210" xmlns="http://www.w3.org/2000/svg" role="img">
+            <text x="0" y="16" style="font:700 13px var(--f-body);fill:var(--ink)">Slide TMA1 · model_1</text>
+            <text x="220" y="16" style="font:700 13px var(--f-body);fill:var(--ink)">Slide TMA2 · model_2</text>
+            <rect x="0" y="26" width="196" height="150" rx="10" style="fill:var(--sunk);stroke:var(--line)"/>
+            <rect x="220" y="26" width="196" height="150" rx="10" style="fill:var(--sunk);stroke:var(--line)"/>
+            <g id="cores1"></g><g id="cores2"></g>
+            <text x="0" y="200" style="font:12px var(--f-body);fill:var(--muted)">Each circle = one core · colour = mouse · several cores per mouse</text>
+          </svg>
+        </figure>
+        <div class="cs-points">
+          <div><b>~2 × 10⁵–10⁶ cells</b><span>Too many for in-memory clustering: sketch 25k cells per slide</span></div>
+          <div><b>Dozens of cores</b><span>No core IDs in the Xenium output: detect them from cell coordinates</span></div>
+          <div><b>Replicate = mouse</b><span>Cores from one mouse are not independent; cells even less so</span></div>
+          <div><b>Slide = model</b><span>Batch and biology are confounded, so integration needs care</span></div>
+        </div>
+      </div>
+
+      <h3 style="margin:36px 0 14px">Six design decisions, and why</h3>
+      <div class="cs-grid">
+        <article class="cs-card">
+          <p class="k" style="color:var(--ch-green)">1 · Core detection</p>
+          <h4>DBSCAN, then merge fragments</h4>
+          <p>DBSCAN on cell centroids (<code>eps = 75 µm</code>) finds dense tissue islands. Torn cores come out in pieces, so fragments closer than 400 µm are merged, and clusters under 300 cells (debris) are dropped. A labelled core map PDF lets you check every core by eye.</p>
+        </article>
+        <article class="cs-card">
+          <p class="k" style="color:var(--accent)">2 · Replicates</p>
+          <h4>A core_map.csv links core → mouse</h4>
+          <p>The script writes a template on the first run. You fill in <code>mouse_id</code>, the model name and <code>exclude</code> (for folded or empty cores) from the TMA layout sheet, then re-run. All statistics use one value per mouse.</p>
+        </article>
+        <article class="cs-card">
+          <p class="k" style="color:var(--ch-mag)">3 · No Harmony</p>
+          <h4>Don't integrate away your result</h4>
+          <p>Each slide holds one model, so "slide" and "model" are the same variable. Harmony on slide would remove the model differences you want to find. The UMAP coloured by slide is the check: shared cell types should still overlap.</p>
+        </article>
+        <article class="cs-card">
+          <p class="k" style="color:var(--ch-amber)">4 · QC</p>
+          <h4>Thresholds for a targeted panel</h4>
+          <p>≥ 20 transcripts and ≥ 15 genes per cell; control probes + codewords ≤ 5% of counts; cell area between 10 µm² and the 99.5th percentile (which removes merged segmentations); only cells inside a kept core.</p>
+        </article>
+        <article class="cs-card">
+          <p class="k" style="color:var(--ch-green)">5 · Annotation</p>
+          <h4>Marker modules, checked two ways</h4>
+          <p>Module scores per cluster for curated marker sets give an automatic first label. You confirm it against <code>FindAllMarkers</code>, in Xenium Explorer, and optionally with RCTD on a matched scRNA-seq reference.</p>
+        </article>
+        <article class="cs-card">
+          <p class="k" style="color:var(--accent)">6 · Statistics</p>
+          <h4>Pseudobulk per cell type and mouse</h4>
+          <p>Counts are summed per cell type × mouse and tested with DESeq2 only where each model has ≥ 2 mice (≥ 3 is better). Cell-type proportions are compared per mouse, for example with <code>speckle::propeller</code>.</p>
+        </article>
+      </div>
+
+      <h3 style="margin:36px 0 14px">Key code</h3>
+      <div class="cs-code">
+        <div class="code"><span class="lang">R · detect TMA cores</span><button type="button">Copy</button><pre>cl  &lt;- dbscan::dbscan(xy, eps = 75, minPts = 10)$cluster
+cen &lt;- aggregate(xy[cl &gt; 0, ], list(cl = cl[cl &gt; 0]), median)
+grp &lt;- cutree(hclust(dist(cen[, -1]), method = "single"), h = 400)  <span class="c"># merge fragments</span>
+cl[cl &gt; 0] &lt;- grp[match(cl[cl &gt; 0], cen$cl)]
+big &lt;- as.integer(names(which(table(cl[cl &gt; 0]) &gt;= 300)))            <span class="c"># drop debris</span>
+obj$core_id[match(cells, colnames(obj))] &lt;- ifelse(cl %in% big, paste0("C", cl), NA)</pre></div>
+        <div class="code"><span class="lang">R · sketch, cluster, project</span><button type="button">Copy</button><pre>obj[["Xenium"]] &lt;- split(obj[["Xenium"]], f = obj$slide)
+obj &lt;- NormalizeData(obj) |&gt; FindVariableFeatures(nfeatures = 2000)
+obj &lt;- SketchData(obj, ncells = 25000, method = "LeverageScore",
+                  sketched.assay = "sketch")
+DefaultAssay(obj) &lt;- "sketch"
+obj &lt;- FindVariableFeatures(obj) |&gt; ScaleData() |&gt; RunPCA(npcs = 30)
+obj &lt;- FindNeighbors(obj, dims = 1:30) |&gt; FindClusters(resolution = 0.5)
+obj &lt;- RunUMAP(obj, dims = 1:30, return.model = TRUE, reduction.name = "umap")
+obj &lt;- ProjectData(obj, assay = "Xenium", sketched.assay = "sketch",
+                   sketched.reduction = "pca", full.reduction = "pca.full",
+                   dims = 1:30, umap.model = "umap",
+                   refdata = list(cluster_full = "seurat_clusters"))</pre></div>
+        <div class="code"><span class="lang">R · pseudobulk, replicate = mouse</span><button type="button">Copy</button><pre>grp &lt;- paste(md$celltype, md$mouse_id, sep = "||")
+mm  &lt;- sparse.model.matrix(~ 0 + factor(grp))
+pb  &lt;- as.matrix(counts %*% mm)              <span class="c"># genes × (cell type, mouse)</span>
+<span class="c"># per cell type, with ≥ 20 cells per mouse and ≥ 2 mice per model:</span>
+dds &lt;- DESeq2::DESeqDataSetFromMatrix(round(pb[, ii$id]), ii, ~ model)
+dds &lt;- DESeq2::DESeq(dds)
+DESeq2::results(dds, contrast = c("model", "model_2", "model_1"))</pre></div>
+      </div>
+
+      <div class="cs-dl">
+        <div>
+          <h3>Full script</h3>
+          <p class="muted">About 380 lines, 13 stages. Switches at the top turn on RCTD, core zooms and Banksy. Set two paths and run.</p>
+        </div>
+        <div class="cs-btns">
+          <a class="btn" href="https://github.com/githubrudramani/OmicLearningHub/blob/main/scripts/xenium_tma_case_study.R" target="_blank" rel="noopener">View on GitHub</a>
+          <a class="btn ghost" href="https://raw.githubusercontent.com/githubrudramani/OmicLearningHub/main/scripts/xenium_tma_case_study.R" target="_blank" rel="noopener">Raw .R file</a>
+        </div>
+      </div>
+
+      <details class="track" style="margin-top:20px">
+        <summary>After the first run: 12-step checklist</summary>
+        <ol class="cs-next">
+          <li>Open <code>cores/*_core_map.pdf</code>: every core should have exactly one label. Tune <code>eps</code> or the 400 µm merge distance if not.</li>
+          <li>Fill <code>cores/core_map.csv</code> (mouse ID, model, exclude) from the TMA layout sheet, then re-run.</li>
+          <li>Check cells kept per slide and core; loosen thresholds rather than lose a whole sample.</li>
+          <li>UMAP by slide: shared cell types should overlap. Decide biology vs. technical before any integration.</li>
+          <li>Review automatic labels against cluster markers; rename, merge or re-cluster a lineage.</li>
+          <li>Load the exported CSVs into Xenium Explorer and check that labels sit in the right tissue layers.</li>
+          <li>Optional: RCTD with a matched reference, core zooms with cell outlines, Banksy domains.</li>
+          <li>Name each niche from its cell-type composition and compare niche fractions per mouse.</li>
+          <li>Test composition with one value per mouse (<code>speckle::propeller</code>).</li>
+          <li>Read pseudobulk DE (padj &lt; 0.05); trust only cell types with enough mice per model.</li>
+          <li>Align H&amp;E to the Xenium image in Xenium Explorer.</li>
+          <li>Record thresholds, versions (<code>sessionInfo.txt</code>) and manual label changes.</li>
+        </ol>
+      </details>
+    </div>
+  </section>
+
   <!-- TRENDS -->
   <section id="trends">
     <div class="wrap">
@@ -778,6 +928,21 @@ writeLines(capture.output(sessionInfo()), "sessionInfo.txt")</pre></div>
     document.getElementById('progbar').style.width=(100*n/steps.length)+'%';
   }
   upd();
+
+  /* case-study design figure: cores coloured by mouse */
+  (function(){
+    const cols=['--accent','--ch-green','--ch-mag','--ch-amber','--muted'];
+    [['cores1',0],['cores2',220]].forEach(([id,ox],si)=>{
+      const g=document.getElementById(id); if(!g) return; let k=0;
+      for(let r=0;r<4;r++)for(let c=0;c<6;c++){
+        const m=Math.floor(k/5)%5; k++;
+        const el=document.createElementNS('http://www.w3.org/2000/svg','circle');
+        el.setAttribute('cx',ox+22+c*30); el.setAttribute('cy',50+r*34); el.setAttribute('r',11);
+        el.setAttribute('style','fill:var('+cols[m]+');opacity:'+((r*6+c)%11===7?0.25:0.85));
+        g.appendChild(el);
+      }
+    });
+  })();
 })();
 </script>
 
