@@ -617,7 +617,7 @@ table(CellTypist = ifnb$celltypist, Published = ifnb$seurat_annotations)</pre></
 
 <article class="step" id="s14" data-title="Condition DE">
             <div class="step-head"><span class="num">14</span><div><p class="kind">Biology</p><h3>Compare conditions within each cell type</h3></div><label class="done-toggle"><input type="checkbox" id="d-s14">Done</label></div>
-            <p class="why">Integration helped us find matching cell types; now test the stimulation within each one. Tests use the normalised expression values, never the Harmony embedding. With biological replicates, use pseudobulk: sum counts per sample and cell type, then run limma-voom with TMM, exactly as in Module 2.</p>
+            <p class="why">Integration helped us find matching cell types; now test the stimulation within each one. Tests use the normalised expression values, never the Harmony embedding. With biological replicates, use pseudobulk: sum counts per donor, condition and cell type, then run limma-voom with TMM, exactly as in Module 2.</p>
             <div class="code"><span class="lang">R · teaching (ifnb has no donor IDs)</span><button type="button">Copy</button><pre>ifnb$celltype.stim &lt;- paste(ifnb$celltype, ifnb$stim, sep = "_")
 Idents(ifnb) &lt;- "celltype.stim"
 mono_ifn &lt;- FindMarkers(ifnb, ident.1 = "Classical Monocytes_STIM",   <span class="c"># use your label names</span>
@@ -625,20 +625,26 @@ mono_ifn &lt;- FindMarkers(ifnb, ident.1 = "Classical Monocytes_STIM",   <span c
 head(mono_ifn, 10)          <span class="c"># expect interferon genes: ISG15, IFIT1, IFI6, MX1</span>
 FeaturePlot(ifnb, c("ISG15", "CXCL10"), split.by = "stim", reduction = "umap.harmony")</pre></div>
             <div class="code"><span class="lang">R · real studies: pseudobulk + limma-voom</span><button type="button">Copy</button><pre>library(edgeR); library(limma)
-<span class="c"># obj has columns: celltype, sample (donor), condition</span>
-pb &lt;- AggregateExpression(obj, assays = "RNA", group.by = c("celltype", "sample"),
-                          return.seurat = FALSE)$RNA
-colnames(pb)                                  <span class="c"># e.g. "CD14 Mono_donor1"</span>
-mono &lt;- pb[, startsWith(colnames(pb), "CD14 Mono_")]
-smp  &lt;- sub("^CD14 Mono_", "", colnames(mono))
-cond &lt;- factor(obj$condition[match(smp, obj$sample)])
+<span class="c"># obj needs three separate columns: celltype, donor_id (the person or animal),</span>
+<span class="c"># and condition. One pseudobulk sample = one donor x condition x cell type.</span>
+pb &lt;- AggregateExpression(obj, assays = "RNA", return.seurat = TRUE,
+                          group.by = c("celltype", "donor_id", "condition"))
+md &lt;- pb@meta.data                    <span class="c"># keeps celltype, donor_id, condition per column</span>
+unique(md$celltype)                   <span class="c"># Seurat may change "_" to "-" in labels</span>
 
-y &lt;- DGEList(mono, group = cond)
-y &lt;- y[filterByExpr(y), , keep.lib.sizes = FALSE]
+sel  &lt;- md$celltype == "CD14 Mono"
+y    &lt;- DGEList(LayerData(pb, assay = "RNA", layer = "counts")[, sel])
+info &lt;- data.frame(donor     = factor(md$donor_id[sel]),
+                   condition = factor(md$condition[sel], levels = c("CTRL", "STIM")))
+y &lt;- y[filterByExpr(y, group = info$condition), , keep.lib.sizes = FALSE]
 y &lt;- calcNormFactors(y, method = "TMM")
-design &lt;- model.matrix(~ cond)
+
+<span class="c"># paired design: each donor measured in both conditions</span>
+design &lt;- model.matrix(~ donor + condition, data = info)
+<span class="c"># (different donors per condition: design &lt;- model.matrix(~ condition, data = info))</span>
 fit &lt;- eBayes(lmFit(voom(y, design), design))
-topTable(fit, coef = 2, n = 20)</pre></div>
+topTable(fit, coef = "conditionSTIM", n = 20)</pre></div>
+            <div class="check"><b>Tested</b>On simulated data with 4 donors × 2 conditions, this gives 8 pseudobulk samples per cell type and ranks all 30 planted interferon genes first. Grouping by donor alone would have merged each donor's control and stimulated cells into one sample.</div>
             <div class="callout warn"><b>Don't</b>Treating each cell as an independent replicate inflates significance hugely (pseudoreplication). For publication-grade condition comparisons, use pseudobulk across donors.</div>
           </article>
 

@@ -11,7 +11,10 @@
 #   * automatic TMA core detection (DBSCAN) with a core map PDF to check it
 #   * mouse (not core, not cell) as the statistical replicate
 #   * Seurat sketching for >1M cells
-#   * no Harmony when slide = biological group (it would remove the biology)
+#   * honest handling of a confounded design: here each slide holds one
+#     model, so slide and model effects CANNOT be separated by any method
+#     (Harmony, covariates or otherwise). Model comparisons below are
+#     exploratory. For confirmatory work, put both models on every slide.
 #   * marker-module annotation, optional RCTD / Banksy, niches,
 #     per-mouse composition and pseudobulk DE
 # ======================================================================
@@ -91,14 +94,22 @@ obj$sample_id <- paste(obj$slide, obj$core_id, sep = "_")
 core_map_file <- file.path(OUT_DIR, "cores", "core_map.csv")
 if (!file.exists(core_map_file)) {
   tmpl <- obj@meta.data %>% filter(!is.na(core_id)) %>% count(slide, core_id, sample_id, model) %>%
-    mutate(mouse_id = sample_id, exclude = FALSE)
+    mutate(mouse_id = "", exclude = FALSE)
   write.csv(tmpl, core_map_file, row.names = FALSE)
+  stop("Wrote ", core_map_file, ". Check the core map PDFs, fill mouse_id (and model / exclude) ",
+       "for every core from your TMA layout sheet, then re-run. The script will not treat cores ",
+       "as mice: several cores from one mouse are not independent replicates.")
 }
-core_map <- read.csv(core_map_file, stringsAsFactors = FALSE)
+core_map <- read.csv(core_map_file, stringsAsFactors = FALSE, na.strings = c("", "NA"))
+core_map$exclude <- as.logical(core_map$exclude) %in% TRUE
+missing_id <- core_map$sample_id[!core_map$exclude & is.na(core_map$mouse_id)]
+if (length(missing_id) > 0)
+  stop(length(missing_id), " kept core(s) have no mouse_id in ", core_map_file, ": ",
+       paste(head(missing_id, 10), collapse = ", "), ". Fill them (or set exclude = TRUE) and re-run.")
 k <- match(obj$sample_id, core_map$sample_id)
 obj$mouse_id <- core_map$mouse_id[k]
 obj$model    <- ifelse(is.na(k), obj$model, core_map$model[k])
-obj$exclude  <- !is.na(k) & as.logical(core_map$exclude[k])
+obj$exclude  <- !is.na(k) & core_map$exclude[k]
 
 # 4. QC --------------------------------------------------------------------
 max_area <- quantile(obj$cell_area, 0.995, na.rm = TRUE)
@@ -291,8 +302,17 @@ prop <- md %>% count(model, mouse_id, celltype) %>%
 write.csv(prop, file.path(OUT_DIR, "de/celltype_proportions_per_mouse.csv"), row.names = FALSE)
 
 # 12. PSEUDOBULK DE (model_2 vs model_1, replicate = mouse) ---------------
+# EXPLORATORY in this design: if each model sits on its own slide, every
+# difference below could be a slide (batch) effect. Adding slide to the
+# model formula cannot fix perfect confounding.
 n_per_model <- tapply(md$mouse_id, md$model, function(x) length(unique(x)))
 print(n_per_model)
+slide_model <- table(model = md$model, slide = md$slide); print(slide_model)
+confounded <- all(rowSums(slide_model > 0) == 1) && all(colSums(slide_model > 0) == 1)
+if (confounded)
+  warning("Each model is on its own slide: model and slide effects are inseparable. ",
+          "Treat the DE and composition results as exploratory (files are labelled _EXPLORATORY).")
+tag <- if (confounded) "_EXPLORATORY" else ""
 if (all(n_per_model >= 2) && requireNamespace("DESeq2", quietly = TRUE)) {
   counts <- LayerData(obj, "counts", assay = "Xenium")
   grp <- paste(md$celltype, md$mouse_id, sep = "||")
@@ -315,7 +335,7 @@ if (all(n_per_model >= 2) && requireNamespace("DESeq2", quietly = TRUE)) {
     r <- as.data.frame(DESeq2::results(dds, contrast = c("model", models[2], models[1])))
     r$gene <- rownames(r)
     write.csv(r[order(r$padj), ], file.path(OUT_DIR, "de",
-              paste0("pseudobulk_DE_", gsub("[^A-Za-z0-9]", "_", ct), "_model_2_vs_model_1.csv")),
+              paste0("pseudobulk_DE_", gsub("[^A-Za-z0-9]", "_", ct), "_model_2_vs_model_1", tag, ".csv")),
               row.names = FALSE)
   }
 }
@@ -347,10 +367,10 @@ message("Pipeline completed. Results saved to: ", OUT_DIR)
 # 3. Look at the QC numbers: print(table(obj$slide)) and the cells kept per
 #    core. If one slide or core loses far more cells, loosen the thresholds
 #    (counts >= 20, genes >= 15) rather than lose a whole sample.
-# 4. Check for a slide batch effect: in clusters/umap.pdf, coloured by slide,
-#    the same cell types should overlap. If whole clusters are made of one
-#    slide only, decide whether that is biology (model) or technical before
-#    adding Harmony – remember slide = model here.
+# 4. Look at clusters/umap.pdf coloured by slide: the same cell types should
+#    overlap. Remember that with one model per slide, the data cannot tell a
+#    slide (batch) effect from a model effect; report model differences as
+#    exploratory and, for the next experiment, place both models on every slide.
 # 5. Review the cell-type labels: compare clusters/cluster_module_scores.csv
 #    with the top genes in clusters/cluster_markers.csv. Rename, merge or
 #    split clusters by hand (or re-cluster one lineage at higher resolution)

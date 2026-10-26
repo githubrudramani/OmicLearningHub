@@ -146,6 +146,7 @@ section{padding-block:56px;border-top:1px solid var(--line)}
 .step .why{color:var(--muted);max-width:70ch}
 .callout{border-left:3px solid var(--ch-amber);background:color-mix(in srgb,var(--ch-amber) 8%,var(--surface));padding:10px 14px;border-radius:0 6px 6px 0;font-size:.93rem}
 .callout.new{border-color:var(--ch-mag);background:color-mix(in srgb,var(--ch-mag) 7%,var(--surface))}
+.callout.warn{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 7%,var(--surface))}
 .callout b{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
 .check{border-left:3px solid var(--ch-green);background:color-mix(in srgb,var(--ch-green) 7%,var(--surface));padding:10px 14px;border-radius:0 6px 6px 0;font-size:.93rem}
 .check b{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;margin-right:6px;color:var(--ch-green)}
@@ -610,8 +611,11 @@ obj &lt;- ProjectIntegration(obj, sketched.assay = "sketch", assay = "RNA",
 obj &lt;- ProjectData(obj, sketched.assay = "sketch", assay = "RNA",
                    sketched.reduction = "harmony.full", full.reduction = "harmony.full",
                    dims = 1:30, refdata = list(cluster_full = "seurat_clusters"))
+<span class="c"># UMAP of ALL cells from the projected Harmony embedding</span>
+obj &lt;- RunUMAP(obj, reduction = "harmony.full", dims = 1:30,
+               reduction.name = "umap.full", reduction.key = "UMAPfull_")
 DefaultAssay(obj) &lt;- "RNA"
-DimPlot(obj, reduction = "full.umap", group.by = c("sample", "cluster_full"))</pre></div>
+DimPlot(obj, reduction = "umap.full", group.by = c("sample", "cluster_full"))</pre></div>
             <div class="callout"><b>Then</b>Subset to one compartment (for example macrophages) and re-cluster to find states such as SPP1⁺ versus C1Q⁺ tumour-associated macrophages. This is the final section of the 10x guide.</div>
           </article>
 
@@ -705,9 +709,11 @@ writeLines(capture.output(sessionInfo()), "sessionInfo.txt")</pre></div>
           <div><b>~2 × 10⁵–10⁶ cells</b><span>Too many for in-memory clustering: sketch 25k cells per slide</span></div>
           <div><b>Dozens of cores</b><span>No core IDs in the Xenium output: detect them from cell coordinates</span></div>
           <div><b>Replicate = mouse</b><span>Cores from one mouse are not independent; cells even less so</span></div>
-          <div><b>Slide = model</b><span>Batch and biology are confounded, so integration needs care</span></div>
+          <div><b>Slide = model</b><span>Slide and model effects are inseparable, so model comparisons are exploratory</span></div>
         </div>
       </div>
+
+      <div class="callout warn" style="margin-top:20px;max-width:none"><b>Design limitation</b>In this layout every model sits on its own slide, so model and slide are perfectly confounded. The pipeline shows how to analyse such data responsibly, but its model-vs-model results are <strong>exploratory</strong>. A balanced TMA, with cores from every model on every slide, lets you estimate the slide effect and test the model effect properly.</div>
 
       <h3 style="margin:36px 0 14px">Six design decisions, and why</h3>
       <div class="cs-grid">
@@ -719,12 +725,12 @@ writeLines(capture.output(sessionInfo()), "sessionInfo.txt")</pre></div>
         <article class="cs-card">
           <p class="k" style="color:var(--accent)">2 · Replicates</p>
           <h4>A core_map.csv links core → mouse</h4>
-          <p>The script writes a template on the first run. You fill in <code>mouse_id</code>, the model name and <code>exclude</code> (for folded or empty cores) from the TMA layout sheet, then re-run. All statistics use one value per mouse.</p>
+          <p>The first run writes a template with empty <code>mouse_id</code>s and stops. You fill in the mouse, model and <code>exclude</code> (for folded or empty cores) from the TMA layout sheet. The script refuses to continue while any kept core lacks a mouse ID, so cores can never be counted as separate mice.</p>
         </article>
         <article class="cs-card">
-          <p class="k" style="color:var(--ch-mag)">3 · No Harmony</p>
-          <h4>Don't integrate away your result</h4>
-          <p>Each slide holds one model, so "slide" and "model" are the same variable. Harmony on slide would remove the model differences you want to find. The UMAP coloured by slide is the check: shared cell types should still overlap.</p>
+          <p class="k" style="color:var(--ch-mag)">3 · Confounded design</p>
+          <h4>No method can separate slide from model</h4>
+          <p>Each slide holds one model, so any model difference could equally be a slide (batch) effect. Harmony on slide would erase the model signal, but skipping Harmony does not make it interpretable either, and adding slide as a covariate cannot fix perfect confounding. The script flags this and labels model results <code>_EXPLORATORY</code>. For confirmatory work, place cores from both models on every slide.</p>
         </article>
         <article class="cs-card">
           <p class="k" style="color:var(--ch-amber)">4 · QC</p>
@@ -739,7 +745,7 @@ writeLines(capture.output(sessionInfo()), "sessionInfo.txt")</pre></div>
         <article class="cs-card">
           <p class="k" style="color:var(--accent)">6 · Statistics</p>
           <h4>Pseudobulk per cell type and mouse</h4>
-          <p>Counts are summed per cell type × mouse and tested with DESeq2 only where each model has ≥ 2 mice (≥ 3 is better). Cell-type proportions are compared per mouse, for example with <code>speckle::propeller</code>.</p>
+          <p>Counts are summed per cell type × mouse and tested with DESeq2 only where each model has ≥ 2 mice (≥ 3 is better). Cell-type proportions are compared per mouse, for example with <code>speckle::propeller</code>. With one model per slide, these results are exploratory.</p>
         </article>
       </div>
 
@@ -820,9 +826,9 @@ REF_CT_COL &lt;- "celltype"</pre></div>
         <summary>After the first run: 12-step checklist</summary>
         <ol class="cs-next">
           <li>Open <code>cores/*_core_map.pdf</code>: every core should have exactly one label. Tune <code>eps</code> or the 400 µm merge distance if not.</li>
-          <li>Fill <code>cores/core_map.csv</code> (mouse ID, model, exclude) from the TMA layout sheet, then re-run.</li>
+          <li>Fill <code>cores/core_map.csv</code> (mouse ID, model, exclude) from the TMA layout sheet, then re-run. The script stops until every kept core has a mouse ID.</li>
           <li>Check cells kept per slide and core; loosen thresholds rather than lose a whole sample.</li>
-          <li>UMAP by slide: shared cell types should overlap. Decide biology vs. technical before any integration.</li>
+          <li>UMAP by slide: shared cell types should overlap. With one model per slide, the data cannot tell slide from model effects, so report model differences as exploratory.</li>
           <li>Review automatic labels against cluster markers; rename, merge or re-cluster a lineage.</li>
           <li>Load the exported CSVs into Xenium Explorer and check that labels sit in the right tissue layers.</li>
           <li>Optional: RCTD with a matched reference, core zooms with cell outlines, Banksy domains.</li>

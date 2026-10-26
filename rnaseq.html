@@ -360,9 +360,10 @@ html{scroll-behavior:smooth}
 
           <article class="step" id="s1" data-title="Set up R">
             <div class="step-head"><span class="num">01</span><div><p class="kind">Setup</p><h3>Install Bioconductor packages</h3></div><label class="done-toggle"><input type="checkbox" id="d-s1">Done</label></div>
-            <p class="why">limma does the modelling, edgeR provides the DGEList container, filtering and TMM, Glimma makes interactive plots, and msigdbr supplies gene sets.</p>
-            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>install.packages(c("BiocManager", "R.utils", "ggplot2", "pheatmap", "msigdbr"))
-BiocManager::install(c("limma", "edgeR", "Glimma", "org.Mm.eg.db"))
+            <p class="why">limma does the modelling, edgeR provides the DGEList container, filtering and TMM, Glimma makes interactive plots, msigdbr supplies MSigDB gene sets, and fgsea, clusterProfiler and data.table run and save the pathway analyses in steps 12–13.</p>
+            <div class="code"><span class="lang">R</span><button type="button">Copy</button><pre>install.packages(c("BiocManager", "R.utils", "ggplot2", "pheatmap", "msigdbr", "data.table"))
+BiocManager::install(c("limma", "edgeR", "Glimma", "org.Mm.eg.db",
+                       "fgsea", "clusterProfiler"))        <span class="c"># fgsea / clusterProfiler: steps 12–13</span>
 
 library(limma); library(edgeR); library(Glimma)
 library(org.Mm.eg.db); library(ggplot2); library(pheatmap)</pre></div>
