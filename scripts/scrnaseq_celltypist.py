@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ======================================================================
 # CELLTYPIST ANNOTATION FOR A SEURAT OBJECT
-# OmicLearningHub · Module 3 · https://githubrudramani.github.io/OmicLearningHub/scrnaseq.html
+# OmicLearningHub · Module 2 · https://githubrudramani.github.io/OmicLearningHub/scrnaseq.html
 #
 # Input: the folder written by the R export snippet (step 13 on the page)
 #   counts.mtx   genes x cells raw counts (Matrix::writeMM)

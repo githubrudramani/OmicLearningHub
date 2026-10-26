@@ -1,8 +1,8 @@
 # ======================================================================
 # GSEA WITH MSigDB AFTER limma-voom
-# OmicLearningHub · Module 2 · https://githubrudramani.github.io/OmicLearningHub/rnaseq.html
+# OmicLearningHub · Module 1 · https://githubrudramani.github.io/OmicLearningHub/rnaseq.html
 #
-# Run after the Module 2 pipeline (needs `efit` from eBayes, whose genes
+# Run after the Module 1 pipeline (needs `efit` from eBayes, whose genes
 # table has a SYMBOL column). Two complementary analyses per collection:
 #
 #   A) Ranked GSEA, ALL genes ranked by limma's moderated t-statistic

@@ -1,6 +1,6 @@
 # ======================================================================
 # XENIUM TMA CASE STUDY – multi-slide tissue microarray pipeline (R)
-# OmicLearningHub · Module 1 · https://githubrudramani.github.io/OmicLearningHub/xenium.html
+# OmicLearningHub · Module 3 · https://githubrudramani.github.io/OmicLearningHub/xenium.html
 #
 # Example design: two Xenium slides, each a tissue microarray (TMA) of
 # mouse tissue cores; each slide holds one model (model_1, model_2), and

@@ -1,4 +1,4 @@
-# Install every package used by Module 2 into an existing R (>= 4.5) without conda.
+# Install every package used by Module 1 into an existing R (>= 4.5) without conda.
 # Run once:  Rscript install.R
 cran <- c("BiocManager", "R.utils", "ggplot2", "pheatmap", "msigdbr", "data.table")
 bioc <- c("limma", "edgeR", "Glimma", "org.Mm.eg.db", "fgsea", "clusterProfiler")

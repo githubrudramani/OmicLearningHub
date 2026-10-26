@@ -1,0 +1,6 @@
+"check","expected","observed","status"
+"genes in raw count table","27179","27179","match"
+"genes kept by filterByExpr","16624","16624","match"
+"TMM normalisation factors","0.894 1.025 1.046 1.046 1.016 0.922 0.996 1.086 0.984","0.894 1.025 1.046 1.046 1.016 0.922 0.996 1.086 0.984","match"
+"eBayes DE counts (Down/NotSig/Up x 3 contrasts)","4648 7113 4863 4927 7026 4671 3135 10972 2517","4646 7118 4860 4936 7008 4680 3141 10953 2530","match"
+"treat |log2FC|>1 DE counts","1632 12976 2016 1777 12790 2057 224 16210 190","1633 12977 2014 1777 12793 2054 223 16211 190","match"

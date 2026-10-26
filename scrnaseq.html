@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Single-Cell Learning Hub</title>
+<meta name="description" content="Module 2: single-cell platforms, an interactive Harmony demo, and a Seurat pipeline with LogNormalize, Harmony, ScType/SingleR/CellTypist annotation and pseudobulk DE.">
+<meta property="og:title" content="Single-cell RNA-seq with Harmony · OmicLearningHub">
+<meta property="og:description" content="Module 2: single-cell platforms, an interactive Harmony demo, and a Seurat pipeline with LogNormalize, Harmony, ScType/SingleR/CellTypist annotation and pseudobulk DE.">
+<meta property="og:image" content="https://githubrudramani.github.io/OmicLearningHub/assets/og-scrnaseq.jpg">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:url" content="https://githubrudramani.github.io/OmicLearningHub/scrnaseq.html">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -55,6 +63,8 @@ code{font-family:var(--f-mono);font-size:.86em;background:var(--sunk);padding:.1
 .tabs a:hover{color:var(--ink);background:var(--sunk)}
 .modules{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
 .chip{font:600 .78rem var(--f-mono);padding:5px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:var(--surface);text-decoration:none}
+a.chip:hover{border-color:var(--muted);color:var(--ink)}
+a.chip{text-decoration:none}
 a.chip:hover{border-color:var(--muted);color:var(--ink)}
 .chip.on{border-color:var(--accent);color:var(--accent)}
 .chip.soon::after{content:" · soon";opacity:.7}
@@ -173,6 +183,13 @@ dl.gloss dd{margin:0}
 .cs-btns{display:flex;gap:10px;flex-wrap:wrap}
 .btn{font:600 .92rem var(--f-body);text-decoration:none;padding:9px 16px;border-radius:8px;background:var(--accent);color:var(--surface);border:1px solid var(--accent)}
 .btn.ghost{background:transparent;color:var(--accent)}
+
+.st{display:inline-block;font:600 .7rem/1.4 var(--f-mono);letter-spacing:.04em;padding:2px 8px;border-radius:999px;white-space:nowrap;vertical-align:1px}
+.st-run{background:color-mix(in srgb,var(--good) 16%,transparent);color:var(--good)}
+.st-sim{background:color-mix(in srgb,var(--ch-amber) 18%,transparent);color:var(--ch-amber)}
+.st-not{background:var(--sunk);color:var(--muted);border:1px solid var(--line)}
+.statusbar{margin-top:16px;display:grid;gap:6px;font-size:.9rem;color:var(--muted)}
+.statusbar a{color:var(--muted)}
 footer{padding-block:32px 48px;border-top:1px solid var(--line);color:var(--muted);font-size:.88rem}
 
 @media (max-width:900px){
@@ -218,16 +235,11 @@ html{scroll-behavior:smooth}
   <div class="hero">
     <div class="wrap hero-grid">
       <div>
-        <p class="eyebrow">Learning hub · Module 3 · Single-cell</p>
+        <p class="eyebrow">Learning hub · Module 2 · Single-cell</p>
         <h1>Single-cell RNA-seq with <em>Harmony</em> integration and cell-type annotation</h1>
         <p class="lede">How single-cell sequencing developed, which platform to choose, how Harmony removes batch effects without erasing biology, and a full Seurat pipeline on real PBMC data. The pipeline uses LogNormalize (no SCTransform), Harmony integration, and automated annotation with ScType cross-checked against SingleR, with CellTypist as an alternative.</p>
-        <div class="modules" aria-label="Learning modules">
-          <a class="chip" href="xenium.html">Spatial · Xenium</a>
-          <a class="chip" href="rnaseq.html">RNA-seq · limma</a>
-          <span class="chip on">scRNA-seq · Harmony</span>
-          <span class="chip soon">Spatial · Visium HD</span>
-          <span class="chip soon">DNA-seq / WGS</span>
-        </div>
+        <div class="modules" aria-label="Learning modules"><a class="chip" href="rnaseq.html">1 · RNA-seq</a><span class="chip on">2 · scRNA-seq</span><a class="chip" href="xenium.html">3 · Spatial</a><span class="chip soon">Visium HD</span><span class="chip soon">DNA-seq / WGS</span></div>
+        <div class="statusbar"><div><strong style="color:var(--ink)">Status:</strong> <span class="st st-sim">Tested on simulated data</span> pseudobulk (step 14) and CellTypist (step 13) · <span class="st st-not">Not yet run</span> full pipeline on ifnb</div><div>Last reviewed 26 October 2026 · <a href="https://github.com/githubrudramani/OmicLearningHub/issues/new?title=%5BModule%202%20%28single-cell%29%5D%20step%20__%3A%20" target="_blank" rel="noopener">Report an issue with this module</a> · <a href="index.html">All modules</a></div></div>
       </div>
       <figure class="fig">
         <canvas id="umap" aria-label="Example UMAP of PBMC cell types"></canvas>
@@ -605,7 +617,7 @@ table(CellTypist = ifnb$celltypist, Published = ifnb$seurat_annotations)</pre></
             <div class="check"><b>Decide</b>Where CellTypist, ScType and the markers from step 11 agree, keep the label. Where they disagree, or <code>conf_score</code> is low, check the DotPlot before naming the cluster. CellTypist's finer labels (e.g. naive vs. memory CD4) are worth keeping when the markers support them.</div>
             <div class="cs-dl">
               <div>
-                <h3>CellTypist script</h3>
+                <h3>CellTypist script <span class="st st-sim">Tested on simulated data</span></h3>
                 <p class="muted">Python, ~80 lines. Tested end to end (R export → CellTypist → R import) on simulated data with a trained model: 100% of cells correctly labelled after majority voting.</p>
               </div>
               <div class="cs-btns">
@@ -617,7 +629,7 @@ table(CellTypist = ifnb$celltypist, Published = ifnb$seurat_annotations)</pre></
 
 <article class="step" id="s14" data-title="Condition DE">
             <div class="step-head"><span class="num">14</span><div><p class="kind">Biology</p><h3>Compare conditions within each cell type</h3></div><label class="done-toggle"><input type="checkbox" id="d-s14">Done</label></div>
-            <p class="why">Integration helped us find matching cell types; now test the stimulation within each one. Tests use the normalised expression values, never the Harmony embedding. With biological replicates, use pseudobulk: sum counts per donor, condition and cell type, then run limma-voom with TMM, exactly as in Module 2.</p>
+            <p class="why">Integration helped us find matching cell types; now test the stimulation within each one. Tests use the normalised expression values, never the Harmony embedding. With biological replicates, use pseudobulk: sum counts per donor, condition and cell type, then run limma-voom with TMM, exactly as in Module 1.</p>
             <div class="code"><span class="lang">R · teaching (ifnb has no donor IDs)</span><button type="button">Copy</button><pre>ifnb$celltype.stim &lt;- paste(ifnb$celltype, ifnb$stim, sep = "_")
 Idents(ifnb) &lt;- "celltype.stim"
 mono_ifn &lt;- FindMarkers(ifnb, ident.1 = "Classical Monocytes_STIM",   <span class="c"># use your label names</span>
@@ -716,7 +728,7 @@ adata.obs["celltypist"] = pred.predicted_labels["majority_voting"]</pre></div>
           <ul>
             <li><a href="https://nf-co.re/scrnaseq" target="_blank" rel="noopener">nf-core/scrnaseq</a><span>FASTQ → matrices; runs on AWS</span></li>
             <li><a href="https://cellxgene.cziscience.com/" target="_blank" rel="noopener">CELLxGENE</a><span>Millions of annotated public cells</span></li>
-            <li><a href="rnaseq.html">Module 2 · limma-voom</a><span>For pseudobulk DE</span></li>
+            <li><a href="rnaseq.html">Module 1 · limma-voom</a><span>For pseudobulk DE</span></li>
           </ul>
         </div>
       </div>
@@ -735,7 +747,7 @@ adata.obs["celltypist"] = pred.predicted_labels["majority_voting"]</pre></div>
 </main>
 
 <footer>
-  <div class="wrap">Module 3 of OmicLearningHub. Platform details as of October 2026; check vendor documentation before designing a study.</div>
+  <div class="wrap">Module 2 of OmicLearningHub. Platform details as of October 2026; check vendor documentation before designing a study. · <a href="https://github.com/githubrudramani/OmicLearningHub/issues/new?title=%5BModule%202%20%28single-cell%29%5D%20step%20__%3A%20" target="_blank" rel="noopener" style="color:inherit">Report an issue</a></div>
 </footer>
 
 <script>

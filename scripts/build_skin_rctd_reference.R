@@ -1,6 +1,6 @@
 # ======================================================================
 # BUILD A MOUSE SKIN scRNA-seq REFERENCE FOR RCTD
-# OmicLearningHub · Module 1 case study · companion to xenium_tma_case_study.R
+# OmicLearningHub · Module 3 case study · companion to xenium_tma_case_study.R
 #
 # Two sources (choose with SOURCE):
 #   "GSE129218" – Joost et al. 2020, Cell Stem Cell: full-thickness dorsal

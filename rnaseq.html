@@ -5,11 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>RNA-seq Learning Hub</title>
+<meta name="description" content="Module 1: RNA-seq history, an interactive TMM explainer, limma-voom differential expression on GSE63310, and MSigDB GSEA/ORA, with a reproducible full run.">
+<meta property="og:title" content="Bulk RNA-seq with limma-voom · OmicLearningHub">
+<meta property="og:description" content="Module 1: RNA-seq history, an interactive TMM explainer, limma-voom differential expression on GSE63310, and MSigDB GSEA/ORA, with a reproducible full run.">
+<meta property="og:image" content="https://githubrudramani.github.io/OmicLearningHub/assets/og-rnaseq.jpg">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:url" content="https://githubrudramani.github.io/OmicLearningHub/rnaseq.html">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
-/* Layout: same lab-notebook system as Module 1 — sticky nav, volcano-plot hero, history timeline → assay types → TMM explainer → numbered limma-voom pipeline → resources. */
+/* Layout: same lab-notebook system as Module 3 — sticky nav, volcano-plot hero, history timeline → assay types → TMM explainer → numbered limma-voom pipeline → resources. */
 :root{
   --bg:#F3F5F8; --surface:#FFFFFF; --sunk:#E9EDF2; --ink:#0F1B2A; --muted:#566476; --line:#D8DFE7;
   --accent:#3446C4; --ch-green:#16865A; --ch-mag:#B52F86; --ch-amber:#A86F00;
@@ -55,6 +63,8 @@ code{font-family:var(--f-mono);font-size:.86em;background:var(--sunk);padding:.1
 .tabs a:hover{color:var(--ink);background:var(--sunk)}
 .modules{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
 .chip{font:600 .78rem var(--f-mono);padding:5px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:var(--surface);text-decoration:none}
+a.chip:hover{border-color:var(--muted);color:var(--ink)}
+a.chip{text-decoration:none}
 a.chip:hover{border-color:var(--muted);color:var(--ink)}
 .chip.on{border-color:var(--accent);color:var(--accent)}
 .chip.soon::after{content:" · soon";opacity:.7}
@@ -179,6 +189,28 @@ dl.gloss dd{margin:0}
 .btn{font:600 .92rem var(--f-body);text-decoration:none;padding:9px 16px;border-radius:8px;background:var(--accent);color:var(--surface);border:1px solid var(--accent)}
 .btn.ghost{background:transparent;color:var(--accent)}
 @media (max-width:700px){.gsea-demo{grid-template-columns:1fr}}
+
+.st{display:inline-block;font:600 .7rem/1.4 var(--f-mono);letter-spacing:.04em;padding:2px 8px;border-radius:999px;white-space:nowrap;vertical-align:1px}
+.st-run{background:color-mix(in srgb,var(--good) 16%,transparent);color:var(--good)}
+.st-sim{background:color-mix(in srgb,var(--ch-amber) 18%,transparent);color:var(--ch-amber)}
+.st-not{background:var(--sunk);color:var(--muted);border:1px solid var(--line)}
+.statusbar{margin-top:16px;display:grid;gap:6px;font-size:.9rem;color:var(--muted)}
+.statusbar a{color:var(--muted)}
+
+.repro{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px;align-items:start}
+.repro-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.repro-meta div{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:2px;min-width:0}
+.repro-meta small{color:var(--muted);font-size:.78rem}
+.repro-meta b{font:700 1.05rem var(--f-display);font-variant-numeric:tabular-nums}
+.repro-meta b.vers{font:600 .8rem/1.4 var(--f-mono)}
+.repro-meta div:last-child{grid-column:1/-1}
+.repro-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:20px;align-items:start}
+.repro-grid .res-table table{min-width:0}
+.repro-grid .res-table td,.repro-grid .res-table th{padding:8px 10px}
+.repro-grid figure{margin:0;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px;display:grid;gap:6px}
+.repro-grid img{width:100%;height:auto;display:block}
+.repro-grid figcaption{font-size:.82rem;color:#566476}
+@media (max-width:900px){.repro,.repro-grid{grid-template-columns:1fr}}
 footer{padding-block:32px 48px;border-top:1px solid var(--line);color:var(--muted);font-size:.88rem}
 
 @media (max-width:900px){
@@ -215,6 +247,7 @@ html{scroll-behavior:smooth}
       <a href="#tmm">TMM explained</a>
       <a href="#pipeline">limma-voom pipeline</a>
       <a href="#s12">GSEA</a>
+      <a href="#reproduce">Reproduce</a>
       <a href="#resources">Resources</a>
     </nav>
   </div>
@@ -224,16 +257,11 @@ html{scroll-behavior:smooth}
   <div class="hero">
     <div class="wrap hero-grid">
       <div>
-        <p class="eyebrow">Learning hub · Module 2 · Transcriptomics</p>
+        <p class="eyebrow">Learning hub · Module 1 · Transcriptomics</p>
         <h1>Bulk RNA-seq with <em>limma-voom</em> and TMM normalisation</h1>
         <p class="lede">How RNA-seq grew from blots and microarrays into today's single-cell and spatial methods, why normalisation decides your results, and a complete differential-expression analysis you can run on a real public dataset.</p>
-        <div class="modules" aria-label="Learning modules">
-          <a class="chip" href="xenium.html">Spatial · Xenium</a>
-          <span class="chip on">RNA-seq · limma</span>
-          <span class="chip soon">Spatial · Visium HD</span>
-          <span class="chip soon">DNA-seq / WGS</span>
-          <a class="chip" href="scrnaseq.html">scRNA-seq · Harmony</a>
-        </div>
+        <div class="modules" aria-label="Learning modules"><span class="chip on">1 · RNA-seq</span><a class="chip" href="scrnaseq.html">2 · scRNA-seq</a><a class="chip" href="xenium.html">3 · Spatial</a><span class="chip soon">Visium HD</span><span class="chip soon">DNA-seq / WGS</span></div>
+        <div class="statusbar"><div><strong style="color:var(--ink)">Status:</strong> <span class="st st-run">Run on public data</span> the whole module, steps 03–13, on GSE63310 · 5 of 5 checks match the paper · <a href="#reproduce">reproduce it</a></div><div>Last reviewed 26 October 2026 · <a href="https://github.com/githubrudramani/OmicLearningHub/issues/new?title=%5BModule%201%20%28bulk%20RNA-seq%29%5D%20step%20__%3A%20" target="_blank" rel="noopener">Report an issue with this module</a> · <a href="index.html">All modules</a></div></div>
       </div>
       <figure class="fig">
         <canvas id="volcano" aria-label="Example volcano plot: log2 fold change against significance, up-regulated genes in orange, down-regulated in blue"></canvas>
@@ -280,7 +308,7 @@ html{scroll-behavior:smooth}
             <tr><td>Bulk total RNA (rRNA-depleted)</td><td>Coding and non-coding RNA, including pre-mRNA</td><td>Works on degraded and FFPE RNA; captures lncRNA</td><td>More reads needed; intronic reads complicate counting</td><td>Same as above</td></tr>
             <tr><td>3′ tag-seq (QuantSeq, BRB-seq)</td><td>One read per transcript near the 3′ end</td><td>Very low cost per sample; good for large screens</td><td>No isoform or splicing information</td><td>limma-voom, edgeR</td></tr>
             <tr><td>Single-cell / single-nucleus</td><td>Expression in each cell</td><td>Resolves cell types and states</td><td>Sparse counts, dissociation artefacts, higher cost</td><td>Seurat, Scanpy; pseudobulk + limma/edgeR for DE</td></tr>
-            <tr><td>Spatial</td><td>Expression with tissue coordinates</td><td>Keeps neighbourhood context</td><td>Panel limits or bin resolution; expensive</td><td>See Module 1</td></tr>
+            <tr><td>Spatial</td><td>Expression with tissue coordinates</td><td>Keeps neighbourhood context</td><td>Panel limits or bin resolution; expensive</td><td>See Module 3</td></tr>
             <tr><td>Long-read (PacBio, Nanopore)</td><td>Full-length isoforms; direct RNA can detect modifications</td><td>Isoform-level answers, fusion transcripts</td><td>Lower depth per dollar; tools still maturing</td><td>IsoQuant, bambu, FLAIR + DTU tests</td></tr>
           </tbody>
         </table>
@@ -636,8 +664,8 @@ gsea_sig[order(padj)][1:10, .(pathway, NES, padj, size)]</pre></div>
             </table></div>
             <div class="cs-dl">
               <div>
-                <h3>Full GSEA script</h3>
-                <p class="muted">Runs all three approaches for Hallmark, Reactome and GO:BP, and writes tables, NES plots, enrichment plots and a method-comparison table. Tested on simulated limma data with planted gene sets.</p>
+                <h3>Full GSEA script <span class="st st-run">Run on public data</span></h3>
+                <p class="muted">Runs all three approaches for Hallmark, Reactome and GO:BP, and writes tables, NES plots, enrichment plots and a method-comparison table. Validated on simulated data with planted gene sets, then run on GSE63310 as part of the <a href="#reproduce">reproducible run</a>.</p>
               </div>
               <div class="cs-btns">
                 <a class="btn" href="https://github.com/githubrudramani/OmicLearningHub/blob/main/scripts/rnaseq_gsea_msigdb.R" target="_blank" rel="noopener">View script</a>
@@ -663,6 +691,52 @@ writeLines(capture.output(sessionInfo()), "sessionInfo.txt")</pre></div>
     </div>
   </section>
 
+
+  <!-- REPRODUCE -->
+  <section id="reproduce">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Part 4b · Reproducible run</p>
+        <h2>Reproduce the whole module with one command</h2>
+        <p class="muted" style="max-width:74ch">Everything above, steps 03 to 13, is packaged as one script with a versioned environment. It runs automatically on GitHub's servers whenever the code changes. The last run finished in 2 min 18 s using 1.8 GB of memory, and every key number matched the published workflow.</p>
+      </div>
+      <div class="repro">
+        <div class="code"><span class="lang">Shell</span><button type="button">Copy</button><pre>git clone https://github.com/githubrudramani/OmicLearningHub.git
+cd OmicLearningHub
+micromamba create -f rnaseq-example/environment.yml     <span class="c"># or: conda env create -f ...</span>
+micromamba activate omiclearninghub-rnaseq
+Rscript rnaseq-example/run_rnaseq_limma.R output        <span class="c"># first run needs internet</span>
+
+<span class="c"># without conda: R ≥ 4.5, then</span>
+Rscript rnaseq-example/install.R</pre></div>
+        <div class="repro-meta">
+          <div><small>Last verified</small><b>2026-10-26</b></div>
+          <div><small>Checks vs. paper</small><b>5 of 5</b></div>
+          <div><small>Runtime / peak RAM</small><b>2 min 18 s · 1.8 GB</b></div>
+          <div><small>Key versions</small><b class="vers">R 4.5.3 · limma 3.66.0 · edgeR 4.8.2 · fgsea 1.36.2</b></div>
+        </div>
+      </div>
+      <h3 style="margin:28px 0 12px">What the run checks</h3>
+      <div class="res-table"><table>
+        <thead><tr><th>Check</th><th class="n">Law et al. 2016</th><th class="n">This run</th><th>Status</th></tr></thead>
+        <tbody><tr><td>genes in raw count table</td><td class="n">27179</td><td class="n">27179</td><td><span class="st st-run">match</span></td></tr><tr><td>genes kept by filterByExpr</td><td class="n">16624</td><td class="n">16624</td><td><span class="st st-run">match</span></td></tr><tr><td>TMM normalisation factors</td><td class="n">0.894 1.025 1.046 1.046 1.016 0.922 0.996 1.086 0.984</td><td class="n">0.894 1.025 1.046 1.046 1.016 0.922 0.996 1.086 0.984</td><td><span class="st st-run">match</span></td></tr><tr><td>eBayes DE counts (Down/NotSig/Up x 3 contrasts)</td><td class="n">4648 7113 4863 4927 7026 4671 3135 10972 2517</td><td class="n">4646 7118 4860 4936 7008 4680 3141 10953 2530</td><td><span class="st st-run">match</span></td></tr><tr><td>treat &#124;log2FC&#124;>1 DE counts</td><td class="n">1632 12976 2016 1777 12790 2057 224 16210 190</td><td class="n">1633 12977 2014 1777 12793 2054 223 16211 190</td><td><span class="st st-run">match</span></td></tr></tbody>
+      </table></div>
+      <p class="muted" style="font-size:.9rem;margin-top:8px;max-width:80ch">DE counts differ by at most 19 genes (under 0.3%) because limma, edgeR and the gene annotation have been updated since 2016. Genes kept and TMM factors are identical.</p>
+      <div class="repro-grid">
+        <figure><a href="rnaseq-example/expected/plots/07_MDS.png"><img src="rnaseq-example/expected/plots/07_MDS.png" alt="MDS plot: samples separate by cell type on dimension 1" loading="lazy" width="2000" height="1000"></a><figcaption>MDS: cell types separate on dimension 1 (74%)</figcaption></figure>
+        <figure><a href="rnaseq-example/expected/plots/10_MD_BasalvsLP.png"><img src="rnaseq-example/expected/plots/10_MD_BasalvsLP.png" alt="MD plot for Basal vs LP with up and down genes" loading="lazy" width="1600" height="1200"></a><figcaption>MD plot, Basal vs LP, |log₂FC| &gt; 1</figcaption></figure>
+        <div class="res-table" style="align-self:start"><table>
+          <thead><tr><th>Top Hallmark sets · Basal vs LP</th><th class="n">NES</th><th class="n">adj. P</th></tr></thead>
+          <tbody><tr><td>E2F Targets</td><td class="n">+2.73</td><td class="n">2.8e-22</td></tr><tr><td>G2M Checkpoint</td><td class="n">+2.67</td><td class="n">1.3e-20</td></tr><tr><td>Epithelial Mesenchymal Transition</td><td class="n">+2.65</td><td class="n">6.1e-20</td></tr><tr><td>Estrogen Response Early</td><td class="n">-2.09</td><td class="n">1.4e-08</td></tr><tr><td>Mitotic Spindle</td><td class="n">+1.90</td><td class="n">6.5e-06</td></tr><tr><td>Myc Targets V1</td><td class="n">+1.82</td><td class="n">3.6e-05</td></tr></tbody>
+        </table></div>
+      </div>
+      <div class="cs-btns" style="margin-top:18px">
+        <a class="btn" href="https://github.com/githubrudramani/OmicLearningHub/tree/main/rnaseq-example" target="_blank" rel="noopener">Package &amp; troubleshooting</a>
+        <a class="btn ghost" href="https://github.com/githubrudramani/OmicLearningHub/blob/main/rnaseq-example/RUN_RECORD.md" target="_blank" rel="noopener">Full run record</a>
+        <a class="btn ghost" href="https://github.com/githubrudramani/OmicLearningHub/tree/rnaseq-run/output" target="_blank" rel="noopener">All outputs</a>
+      </div>
+    </div>
+  </section>
   <section id="resources">
     <div class="wrap">
       <div class="sec-head">
@@ -691,7 +765,7 @@ writeLines(capture.output(sessionInfo()), "sessionInfo.txt")</pre></div>
           <ul>
             <li><a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE63310" target="_blank" rel="noopener">GEO · GSE63310</a><span>Mouse mammary cell populations</span></li>
             <li><a href="https://www.gsea-msigdb.org/gsea/msigdb" target="_blank" rel="noopener">MSigDB</a><span>Gene set collections</span></li>
-            <li><a href="xenium.html">Module 1 · Xenium</a><span>Spatial omics primer and pipeline</span></li>
+            <li><a href="xenium.html">Module 3 · Xenium</a><span>Spatial omics primer and pipeline</span></li>
           </ul>
         </div>
       </div>
@@ -712,7 +786,7 @@ writeLines(capture.output(sessionInfo()), "sessionInfo.txt")</pre></div>
 </main>
 
 <footer>
-  <div class="wrap">Module 2 of OmicLearningHub. Outputs shown are from Law et al. (F1000Research, 2016); your numbers may differ slightly with newer package and annotation versions.</div>
+  <div class="wrap">Module 1 of OmicLearningHub. Outputs shown are from Law et al. (F1000Research, 2016); your numbers may differ slightly with newer package and annotation versions. · <a href="https://github.com/githubrudramani/OmicLearningHub/issues/new?title=%5BModule%201%20%28bulk%20RNA-seq%29%5D%20step%20__%3A%20" target="_blank" rel="noopener" style="color:inherit">Report an issue</a></div>
 </footer>
 
 <script>

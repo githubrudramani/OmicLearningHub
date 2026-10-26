@@ -1,5 +1,5 @@
 # ======================================================================
-# OmicLearningHub · Module 2 · complete, reproducible run
+# OmicLearningHub · Module 1 · complete, reproducible run
 # Bulk RNA-seq with limma-voom + TMM on GSE63310 (Law et al. 2016),
 # followed by MSigDB GSEA / ORA (scripts/rnaseq_gsea_msigdb.R).
 #

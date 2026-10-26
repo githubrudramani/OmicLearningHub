@@ -1,0 +1,5 @@
+outcome: success
+commit: c19cc189f4ce5c0c171f4be76a9d44c35709c710
+runner: Ubuntu 26.04.1 LTS, 4 CPUs, 15 GB RAM
+Elapsed (wall clock) time (h:mm:ss or m:ss): 2:18.16
+Maximum resident set size (kbytes): 1850720
