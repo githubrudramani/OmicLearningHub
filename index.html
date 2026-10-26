@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>OmicLearningHub</title>
 <meta name="description" content="Hands-on bioinformatics learning modules: spatial transcriptomics (Xenium), bulk RNA-seq with limma-voom, and single-cell RNA-seq with Harmony.">
+<meta property="og:title" content="OmicLearningHub">
+<meta property="og:description" content="Hands-on bioinformatics learning hub: Xenium spatial, bulk RNA-seq (limma-voom, GSEA) and single-cell RNA-seq (Harmony, ScType, CellTypist).">
+<meta property="og:image" content="https://githubrudramani.github.io/OmicLearningHub/assets/og-image.jpg">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:url" content="https://githubrudramani.github.io/OmicLearningHub/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -194,18 +201,34 @@ html{scroll-behavior:smooth}
 .mod .go{font:600 .88rem var(--f-body);color:var(--accent)}
 .mod.soon{opacity:.7;border-style:dashed}
 @media (max-width:900px){.mods{grid-template-columns:1fr}}
+
+.hero-art{margin:0;border-radius:18px;overflow:hidden;background:#06122b;box-shadow:0 18px 40px -18px rgba(20,40,120,.45);max-width:100%;aspect-ratio:540/510}
+.hero-art img{display:block;width:100%;height:100%;object-fit:cover}
+.hero-cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.btn{font:600 .95rem var(--f-body);text-decoration:none;padding:10px 18px;border-radius:8px;background:var(--accent);color:var(--surface);border:1px solid var(--accent)}
+.btn.ghost{background:transparent;color:var(--accent)}
+@media (max-width:900px){.hero-art{max-width:520px}}
 </style>
 </head>
 <body>
 <header class="top"><div class="wrap"><a class="brand" href="index.html"><i aria-hidden="true"></i>OmicLearningHub</a>
 <nav class="tabs" aria-label="Modules"><a href="xenium.html">Xenium</a><a href="rnaseq.html">RNA-seq</a><a href="scrnaseq.html">scRNA-seq</a></nav></div></header>
 <main>
-  <div class="hero"><div class="wrap">
-    <p class="eyebrow">Bioinformatics learning hub</p>
-    <h1 style="max-width:18ch;margin-top:10px">From raw reads to <em>biology</em>, one pipeline at a time.</h1>
-    <p class="lede">Each module explains how the technology developed, compares the main platforms, explains the key method with an interactive demo, and walks through a complete analysis with code you can copy on public data.</p>
+  <div class="hero"><div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow">Bioinformatics learning hub</p>
+      <h1 style="max-width:18ch;margin-top:10px">From raw reads to <em>biology</em>, one pipeline at a time.</h1>
+      <p class="lede">Each module explains how the technology developed, compares the main platforms, explains the key method with an interactive demo, and walks through a complete analysis with code you can copy on public data.</p>
+      <div class="hero-cta"><a class="btn" href="#modules">Start learning</a><a class="btn ghost" href="xenium.html#case-study">See a real project</a></div>
+    </div>
+    <figure class="hero-art">
+      <picture>
+        <source srcset="assets/hero-omics.webp" type="image/webp">
+        <img src="assets/hero-omics.jpg" width="540" height="510" alt="Hexagon panels of omics data: single-cell UMAP clusters, cell images, and spatial tissue maps">
+      </picture>
+    </figure>
   </div></div>
-  <section><div class="wrap">
+  <section id="modules"><div class="wrap">
     <div class="mods">
       <a class="mod" href="xenium.html"><p class="k" style="color:var(--ch-green)">Module 1 · Spatial</p><h3>Xenium spatial transcriptomics</h3><p>What spatial omics is, how 10x, Bruker (NanoString), Vizgen and others compare, and a 12-step Seurat pipeline with Harmony, Banksy and niche analysis. Includes a real-world multi-slide TMA case study with a downloadable script.</p><span class="go">Start module →</span></a>
       <a class="mod" href="rnaseq.html"><p class="k" style="color:var(--accent)">Module 2 · Bulk RNA-seq</p><h3>limma-voom with TMM</h3><p>RNA-seq history, assay types, an interactive TMM explainer, differential expression on GSE63310, and MSigDB pathway analysis (GSEA and ORA).</p><span class="go">Start module →</span></a>
