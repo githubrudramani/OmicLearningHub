@@ -258,6 +258,22 @@ html{scroll-behavior:smooth}
 .ex-tbl tr:last-child td{border-bottom:0}
 @media (max-width:900px){.path{grid-template-columns:1fr 1fr 1fr}.pre-body{grid-template-columns:1fr}}
 @media (max-width:700px){.path{grid-template-columns:1fr}}
+
+.pre-wrap{display:grid;gap:14px;min-width:0}
+.pre-wrap>h3{font-size:1.1rem}
+.terms{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.term{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;display:grid;gap:8px;align-content:start;min-width:0}
+.term h4{margin:0;font:700 1rem/1.25 var(--f-display);color:var(--ink)}
+.term p{margin:0;font-size:.92rem;line-height:1.6;color:var(--ink)}
+.term .eg{display:block;margin-top:6px;color:var(--muted)}
+.term a{font-size:.85rem;font-weight:600;color:var(--accent);text-decoration:none}
+.term a:hover{text-decoration:underline}
+.term code{font-size:.82em}
+.term.together{background:var(--sunk)}
+.term.together .ex-tbl table{font-size:.74rem}
+.term.together .ex-tbl th,.term.together .ex-tbl td{padding:4px 6px}
+@media (max-width:1000px){.terms{grid-template-columns:1fr 1fr}}
+@media (max-width:640px){.terms{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -287,32 +303,56 @@ html{scroll-behavior:smooth}
     <ol class="path">
       <li class="path-step pre">
         <span class="path-n">0</span>
-        <div class="pre-body">
-          <div>
-            <h3>Before you start: five ideas every module relies on</h3>
-            <p>Every analysis starts from a <a href="rnaseq.html#s3"><strong>count matrix</strong></a>: one row per gene, one column per sample (or per cell in single-cell data), and each number is how many sequencing reads came from that gene. In the example, <em>Krt14</em> has 2,310 reads in a basal-cell sample but 120 in a luminal one. Beside it sits the <a href="rnaseq.html#s4"><strong>sample metadata</strong></a>, a table that says what each column is. In Module 1 that means its cell type (Basal, LP or ML) and the sequencing lane it ran on. The metadata is also where you separate <a href="rnaseq.html#s4"><strong>biological replicates</strong> from <strong>technical batches</strong></a>. Three mice per group are replicates, the independent units your statistics count. The lane, slide or processing day is a batch, a technical source of variation the model must allow for. Two tissue cores from the same mouse are still one replicate. <a href="rnaseq.html#tmm"><strong>Normalisation</strong></a> makes samples comparable. If sample A received 20 million reads and sample B 40 million, every gene looks twice as high in B until you adjust. TMM also corrects for a few very abundant genes using up the read budget. Finally, the <a href="rnaseq.html#s8"><strong>experimental design</strong></a> is the formula that ties it together. For example, <code>~ 0 + celltype + lane</code> compares cell types while allowing for lane differences. It only works because each cell type was sequenced on more than one lane: if every basal sample shared one lane, cell type and lane could not be told apart.</p>
-          </div>
-          <div class="pre-ex" aria-label="Example count matrix and sample metadata">
-            <p class="ex-cap">Count matrix <span>(reads per gene; illustrative values)</span></p>
-            <div class="ex-tbl"><table>
-              <thead><tr><th>gene</th><th>10_6_5_11</th><th>9_6_5_11</th><th>purep53</th></tr></thead>
-              <tbody>
-                <tr><td>Krt14</td><td>120</td><td>85</td><td>2,310</td></tr>
-                <tr><td>Krt5</td><td>64</td><td>40</td><td>1,870</td></tr>
-                <tr><td>Elf5</td><td>1,450</td><td>210</td><td>12</td></tr>
-                <tr><td>Actb</td><td>9,800</td><td>10,240</td><td>9,610</td></tr>
-              </tbody>
-            </table></div>
-            <p class="ex-cap">Sample metadata <span>(from GSE63310, Module 1)</span></p>
-            <div class="ex-tbl"><table>
-              <thead><tr><th>sample</th><th>cell type</th><th>lane (batch)</th></tr></thead>
-              <tbody>
-                <tr><td>10_6_5_11</td><td>LP</td><td>L004</td></tr>
-                <tr><td>9_6_5_11</td><td>ML</td><td>L004</td></tr>
-                <tr><td>purep53</td><td>Basal</td><td>L004</td></tr>
-                <tr><td>JMS8-2</td><td>Basal</td><td>L006</td></tr>
-              </tbody>
-            </table></div>
+        <div class="pre-wrap">
+          <h3>Before you start: five terms every module uses</h3>
+          <div class="terms">
+            <div class="term">
+              <h4>Count matrix</h4>
+              <p>The table almost every omics analysis starts from. Rows are genes; columns are samples (bulk RNA-seq) or single cells (single-cell RNA-seq). Each number counts how many sequencing reads or molecules came from that gene. <span class="eg">Example: <em>GAPDH</em> has 5,200 reads in a tumour sample and 4,900 in a normal sample. Those are two entries of the matrix. A bulk study is often ~20,000 genes × 6–50 samples; a single-cell study is ~20,000 genes × tens of thousands of cells, mostly zeros.</span></p>
+              <a href="rnaseq.html#s3">See it in Module 1 →</a>
+            </div>
+            <div class="term">
+              <h4>Sample metadata</h4>
+              <p>A second table with one row per sample (or cell) that says where each column came from: the condition, genotype, sex, age, tissue, the animal or patient, and how it was processed (date, kit, sequencing lane). The analysis can only compare what the metadata records. <span class="eg">Example: <code>Trt_2 · treated · mouse M5 · batch 2</code>. If the treatment is not written down, it cannot be tested.</span></p>
+              <a href="rnaseq.html#s4">See it in Module 1 →</a>
+            </div>
+            <div class="term">
+              <h4>Biological replicates vs. technical batches</h4>
+              <p>A <strong>biological replicate</strong> is an independent unit: a different mouse, patient or separately grown culture. Replicates capture natural variation, and you need several per group (usually three or more) to tell a real difference from chance. Re-sequencing the same RNA, or cutting two sections from one tumour, does not add a replicate. A <strong>technical batch</strong> is a set of samples processed together (same day, kit lot, lane or slide), which can shift them all in the same direction. <span class="eg">Example: 3 control and 3 treated mice are 6 replicates. If all controls were prepared on Monday and all treated mice on Tuesday, the day effect and the treatment effect cannot be separated.</span></p>
+              <a href="scrnaseq.html#s14">See it in Module 2 →</a>
+            </div>
+            <div class="term">
+              <h4>Normalisation</h4>
+              <p>Adjusting raw counts so samples can be compared fairly, because they receive different numbers of reads and differ in RNA make-up. <span class="eg">Example: sample A is sequenced to 20 million reads and sample B to 40 million. Every gene in B has about twice the counts even though nothing biological changed. Dividing by library size (counts per million) fixes this. TMM also corrects for a few very highly expressed genes using up the reads. In single-cell data each cell is scaled to the same total, e.g. 10,000, then log-transformed.</span></p>
+              <a href="rnaseq.html#tmm">See it in Module 1 →</a>
+            </div>
+            <div class="term">
+              <h4>Experimental design</h4>
+              <p>The plan of which samples you have and which comparisons you will make, written for the analysis as a model formula. It is decided before sequencing: enough replicates, groups spread across batches, every variable recorded. <span class="eg">Example: <code>~ batch + condition</code> asks "what does the condition change, after allowing for batch?". For before-and-after samples from the same patients, <code>~ patient + condition</code> compares each patient with themselves.</span></p>
+              <a href="rnaseq.html#s8">See it in Module 1 →</a>
+            </div>
+            <div class="term together">
+              <h4>Putting it together</h4>
+              <p class="ex-cap">Count matrix <span>(reads; made-up values)</span></p>
+              <div class="ex-tbl"><table>
+                <thead><tr><th>gene</th><th>Ctrl_1</th><th>Ctrl_2</th><th>Trt_1</th><th>Trt_2</th></tr></thead>
+                <tbody>
+                  <tr><td>GAPDH</td><td>5,200</td><td>4,950</td><td>5,080</td><td>5,310</td></tr>
+                  <tr><td>IL6</td><td>14</td><td>9</td><td>420</td><td>388</td></tr>
+                  <tr><td>MKI67</td><td>310</td><td>295</td><td>120</td><td>141</td></tr>
+                </tbody>
+              </table></div>
+              <p class="ex-cap">Sample metadata <span>(each group in both batches)</span></p>
+              <div class="ex-tbl"><table>
+                <thead><tr><th>sample</th><th>condition</th><th>mouse</th><th>batch</th></tr></thead>
+                <tbody>
+                  <tr><td>Ctrl_1</td><td>control</td><td>M1</td><td>1</td></tr>
+                  <tr><td>Ctrl_2</td><td>control</td><td>M2</td><td>2</td></tr>
+                  <tr><td>Trt_1</td><td>treated</td><td>M4</td><td>1</td></tr>
+                  <tr><td>Trt_2</td><td>treated</td><td>M5</td><td>2</td></tr>
+                </tbody>
+              </table></div>
+            </div>
           </div>
         </div>
       </li>
