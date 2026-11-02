@@ -6,14 +6,17 @@
 #   "GSE129218" – Joost et al. 2020, Cell Stem Cell: full-thickness dorsal
 #                 skin (epidermis, hair follicle, dermis, immune, vascular),
 #                 10x UMI counts, ~5,800 cells, 5- and 9-week-old mice.
-#                 RECOMMENDED for full-thickness skin. You name clusters.
+#                 RECOMMENDED for full-thickness skin. Default labels: the
+#                 AUTHORS' published cell types (independent of your own
+#                 annotation), translated to broad labels.
 #   "TMS"       – Tabula Muris Senis, Skin (droplet / 10x). Ready-made
 #                 cell_ontology_class labels, but check coverage first:
 #                 if fibroblast / endothelial classes are missing, RCTD
 #                 will force dermal cells into keratinocyte labels.
 #
-# Status: not yet test-run end to end. Each stage prints what it found and
-# stops with a clear message if the data look different than expected.
+# Status: not yet test-run end to end (the author-label matching was tested on
+# the published label files). Each stage prints what it found and stops with
+# a clear message if the data look different than expected.
 # Re-runnable: downloads, loading and clustering are cached.
 # ======================================================================
 
@@ -28,12 +31,22 @@ SOURCE   <- "GSE129218"           # "GSE129218" (recommended) or "TMS"
 REF_ROOT <- path.expand("~/refs")
 OUT_RDS  <- file.path(REF_ROOT, paste0("mouse_skin_", SOURCE, "_rctd_ref.rds"))
 
-# GSE129218 only – A) author annotation file, if you have one (else NULL)
+# GSE129218 only – how cells get their labels:
+#   "authors"  (default) the authors' published labels, downloaded from
+#              github.com/kasperlab/Joost_et_al_2020_Cell_Stem_Cell. Because
+#              the original authors assigned them, label transfer to your
+#              Xenium data is independent of your own annotation.
+#   "file"     your own annotation file (settings A below)
+#   "clusters" cluster the reference and name clusters yourself (settings B)
+GSE_LABELS <- "authors"
+AUTHOR_LABELS_URL <- "https://raw.githubusercontent.com/kasperlab/Joost_et_al_2020_Cell_Stem_Cell/master/"
+
+# GSE129218 "file" – A) author annotation file, if you have one (else NULL)
 ANN_FILE        <- NULL           # e.g. file.path(REF_ROOT, "GSE129218", "annotation.txt.gz")
 ANN_BARCODE_COL <- NULL           # column with cell barcodes
 ANN_CT_COL      <- NULL           # column with cell type names
 
-# GSE129218 only – B) otherwise name clusters after the first run, using
+# GSE129218 "clusters" – B) name clusters after the first run, using
 #    ref_marker_dotplot.pdf and ref_cluster_markers.csv.
 #    * clusters you leave out are dropped; the same name merges clusters
 #    * keep labels COARSE (e.g. one "Immune", one "Vascular"): RCTD drops
@@ -55,6 +68,53 @@ LABEL_MAP <- c()
 # ----------------------------------------------------------------------
 
 dir.create(REF_ROOT, recursive = TRUE, showWarnings = FALSE)
+
+# ---------------- helpers for the authors' labels (GSE129218) ----------
+# Read the three published label files: cell key ("BARCODE-5w"), main class
+# (EPI, ANA, FIB, IMM, VASC, MEL, MISC, JUNK) and subpopulation name.
+read_author_labels <- function(dir) {
+  l1 <- read.delim(file.path(dir, "celltypes_1st_level.txt"), header = FALSE, col.names = c("key", "class"))
+  l2 <- read.delim(file.path(dir, "celltypes_2nd_level.txt"), header = FALSE, col.names = c("key", "sub"))
+  nm <- readLines(file.path(dir, "cell_types_cluster_names.txt"), warn = FALSE)
+  nm <- regmatches(nm, regexec("'([^']+)'\\s*:\\s*'([^']+)'", nm))
+  nm <- nm[lengths(nm) == 3]
+  nm <- setNames(sapply(nm, `[`, 3), sapply(nm, `[`, 2))
+  a <- merge(l1, l2, by = "key", all.x = TRUE)
+  a$class <- trimws(a$class); a$sub <- trimws(a$sub)
+  a$name  <- ifelse(a$sub %in% names(nm), unname(nm[a$sub]), a$sub)
+  a$bc <- sub("-[^-]+$", "", a$key); a$tp <- sub("^.*-", "", a$key)
+  a
+}
+# Match reference cells to author keys. A few barcodes occur at both time
+# points, so each SAMPLE is first given the time point whose barcodes it
+# shares most, then barcode + time point is matched.
+match_author_labels <- function(cells, samples, auth) {
+  m <- regexpr("[ACGT]{12,16}(?=(-[0-9]+)?$)", cells, perl = TRUE)
+  bc <- rep(NA_character_, length(cells)); bc[m > 0] <- regmatches(cells, m)
+  tps <- unique(auth$tp)
+  tp_of <- sapply(split(bc, samples), function(b)
+    tps[which.max(sapply(tps, function(t) sum(b %in% auth$bc[auth$tp == t])))])
+  match(paste0(bc, "-", tp_of[as.character(samples)]), auth$key)
+}
+# Translate author names into broad labels (one rule per published category;
+# edit the names on the right to match your own Xenium labels).
+translate_author_labels <- function(name, class) {
+  dplyr::case_when(
+    name %in% c("IFE B", "IFE C")     ~ "Basal_Proliferating_KC",   # interfollicular basal + cycling basal
+    name %in% c("IFE SB1", "IFE SB2") ~ "Differentiated_KC",        # interfollicular suprabasal
+    name == "SG"                      ~ "Sebocyte",                 # sebaceous gland
+    class %in% c("EPI", "ANA")        ~ "HairFollicle_KC",          # uHF, OB, HG + anagen follicle layers
+    class == "FIB"                    ~ "Fibroblast",               # FIB1-4, dermal sheath, dermal papilla
+    name == "TC"                      ~ "T_cell",
+    class == "IMM"                    ~ "Macrophage_DC",            # MC1-3, DC, LC
+    name %in% c("EC1", "EC2")         ~ "Endothelial",
+    name == "LV"                      ~ "Lymphatic_EC",
+    name == "vSM"                     ~ "Pericyte_SMC",
+    name %in% c("MEL1", "MEL2")       ~ "Melanocyte",
+    name == "SC"                      ~ "Schwann_nerve",
+    name == "SM"                      ~ "Skeletal_muscle",
+    TRUE                              ~ NA_character_)              # JUNK, red blood cells, unmatched
+}
 
 # ======================================================================
 # SOURCE 1: GSE129218 (Joost et al. 2020)
@@ -111,7 +171,25 @@ if (SOURCE == "GSE129218") {
   message("After QC: ", ncol(ref), " cells")
 
   # 4. CELL TYPE LABELS --------------------------------------------------
-  if (!is.null(ANN_FILE)) {
+  if (GSE_LABELS == "authors") {
+    # ---- authors' published labels
+    for (f in c("celltypes_1st_level.txt", "celltypes_2nd_level.txt", "cell_types_cluster_names.txt"))
+      if (!file.exists(file.path(REF_DIR, f))) download.file(paste0(AUTHOR_LABELS_URL, f), file.path(REF_DIR, f), quiet = TRUE)
+    auth <- read_author_labels(REF_DIR)
+    print(table(auth$class))                          # 6,095 cells: 5,767 + 328 JUNK
+    k <- match_author_labels(colnames(ref), ref$orig.ident, auth)
+    message("Author label found for ", sum(!is.na(k)), " of ", ncol(ref), " cells")
+    if (mean(!is.na(k)) < 0.5)
+      stop("Under half of the cells matched the authors' barcodes - compare head(colnames(ref)) with head(auth$key).")
+    ref$author_class <- auth$class[k]; ref$author_name <- auth$name[k]
+    ref$celltype      <- translate_author_labels(ref$author_name, ref$author_class)
+    ref$celltype_fine <- ref$author_name              # the authors' ~56 subpopulations
+    trans <- as.data.frame(table(class = ref$author_class, name = ref$author_name,
+                                 celltype = ref$celltype, useNA = "ifany"))
+    trans <- trans[trans$Freq > 0, ]
+    write.csv(trans[order(trans$celltype, trans$class), ], file.path(REF_DIR, "author_label_translation.csv"),
+              row.names = FALSE)                       # for the methods section
+  } else if (GSE_LABELS == "file" && !is.null(ANN_FILE)) {
     # ---- A) labels from an annotation file
     ann <- fread(ANN_FILE, data.table = FALSE)
     if (is.null(ANN_BARCODE_COL) || is.null(ANN_CT_COL)) {
@@ -127,7 +205,7 @@ if (SOURCE == "GSE129218") {
     if (mean(!is.na(k)) < 0.5) stop("Barcodes don't match – compare head(ann) and head(colnames(ref)).")
     ref$celltype <- ann[[ANN_CT_COL]][k]
   } else {
-    # ---- B) cluster the reference and name clusters by markers
+    # ---- B) cluster the reference and name clusters by markers ("clusters")
     if (!file.exists(clu_rds)) {
       ref <- NormalizeData(ref) |> FindVariableFeatures(nfeatures = 3000) |> ScaleData() |> RunPCA(npcs = 30)
       ref <- FindNeighbors(ref, dims = 1:30) |> FindClusters(resolution = 0.5) |> RunUMAP(dims = 1:30)

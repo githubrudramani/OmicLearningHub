@@ -1,0 +1,5 @@
+slide,block_id,mouse_id,condition,stratum,sex,age_weeks
+TMA1,Block_A,mouse01,control,week8,F,12
+TMA1,Block_B,mouse02,treated,week8,F,12
+TMA1,Block_C,mouse03,control,week16,M,20
+TMA1,Block_D,mouse04,treated,week16,M,20

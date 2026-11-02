@@ -1,0 +1,9 @@
+core_number,block_id,map_row,map_col
+1,Block_A,1,1
+2,Block_A,1,2
+3,Empty,1,3
+4,Block_B,1,4
+5,Block_B,2,1
+6,Block_C,2,2
+7,Block_C,2,3
+8,Block_D,2,4

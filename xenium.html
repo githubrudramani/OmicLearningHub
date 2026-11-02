@@ -277,7 +277,7 @@ html{scroll-behavior:smooth}
         <h1>Read tissue the way it was built: <em>Xenium</em>, from slide to cell types.</h1>
         <p class="lede">A practical module on spatial omics. Learn what the technology measures, how the major platforms differ, then work through a complete Xenium analysis in R, from raw output bundle to annotated cell types and tissue niches.</p>
         <div class="modules" aria-label="Learning modules"><a class="chip" href="rnaseq.html">1 · RNA-seq</a><a class="chip" href="scrnaseq.html">2 · scRNA-seq</a><span class="chip on">3 · Spatial</span><span class="chip soon">Visium HD</span><span class="chip soon">DNA-seq / WGS</span></div>
-        <div class="statusbar"><div><strong style="color:var(--ink)">Status:</strong> <span class="st st-sim">Tested on simulated data</span> sketch projection (step 09) and case-study checks · <span class="st st-not">Not yet run</span> full pipeline</div><div>Last reviewed 26 October 2026 · <a href="https://github.com/githubrudramani/OmicLearningHub/issues/new?title=%5BModule%203%20%28spatial%29%5D%20step%20__%3A%20" target="_blank" rel="noopener">Report an issue with this module</a> · <a href="index.html">All modules</a></div></div>
+        <div class="statusbar"><div><strong style="color:var(--ink)">Status:</strong> <span class="st st-sim">Tested on simulated data</span> sketch projection (step 09) and case-study functions (26 tests) · <span class="st st-not">Not yet run</span> full pipeline</div><div>Last reviewed 26 October 2026 · <a href="https://github.com/githubrudramani/OmicLearningHub/issues/new?title=%5BModule%203%20%28spatial%29%5D%20step%20__%3A%20" target="_blank" rel="noopener">Report an issue with this module</a> · <a href="index.html">All modules</a></div></div>
       </div>
       <figure class="slide" style="margin:0">
         <canvas id="tissue" aria-label="Simulated Xenium field of view: cell outlines with transcripts coloured by gene"></canvas>
@@ -702,98 +702,96 @@ writeLines(capture.output(sessionInfo()), "sessionInfo.txt")</pre></div>
     <div class="wrap">
       <div class="sec-head">
         <p class="eyebrow">Part 3b · Real-world case study</p>
-        <h2>Multi-slide TMA project: from two slides to per-mouse statistics</h2>
-        <p class="muted" style="max-width:74ch">The tutorial above analyses one tissue section. Real projects are messier. This case study is an anonymised pipeline from an actual project: two Xenium slides, each a tissue microarray (TMA) of mouse tissue cores, with one model per slide and several cores per mouse. It covers the decisions the tutorial doesn't, and the full script is ready to adapt.</p>
+        <h2>Multi-slide TMA project: from two slides to per-animal statistics</h2>
+        <p class="muted" style="max-width:74ch">The tutorial above analyses one tissue section. Real projects are messier. This case study is a general version of the pipeline used in an actual project: two Xenium slides, each a tissue microarray (TMA) of mouse tissue cores, with several cores per animal and every group spread over both slides. It covers the decisions the tutorial doesn't, and the full script is ready to adapt.</p>
       </div>
 
       <div class="cs-layout">
-        <figure class="cs-design" aria-label="Study design: two slides, each with many cores, cores grouped by mouse">
+        <figure class="cs-design" aria-label="Study design: two slides, each with many cores, cores grouped by animal, groups on both slides">
           <svg viewBox="0 0 420 210" xmlns="http://www.w3.org/2000/svg" role="img">
-            <text x="0" y="16" style="font:700 13px var(--f-body);fill:var(--ink)">Slide TMA1 · model_1</text>
-            <text x="220" y="16" style="font:700 13px var(--f-body);fill:var(--ink)">Slide TMA2 · model_2</text>
+            <text x="0" y="16" style="font:700 13px var(--f-body);fill:var(--ink)">Slide TMA1</text>
+            <text x="220" y="16" style="font:700 13px var(--f-body);fill:var(--ink)">Slide TMA2</text>
             <rect x="0" y="26" width="196" height="150" rx="10" style="fill:var(--sunk);stroke:var(--line)"/>
             <rect x="220" y="26" width="196" height="150" rx="10" style="fill:var(--sunk);stroke:var(--line)"/>
             <g id="cores1"></g><g id="cores2"></g>
-            <text x="0" y="200" style="font:12px var(--f-body);fill:var(--muted)">Each circle = one core · colour = mouse · several cores per mouse</text>
+            <text x="0" y="200" style="font:12px var(--f-body);fill:var(--muted)">Circle = core · colour = animal · faded = empty or lost spot</text>
           </svg>
         </figure>
         <div class="cs-points">
-          <div><b>~2 × 10⁵–10⁶ cells</b><span>Too many for in-memory clustering: sketch 25k cells per slide</span></div>
-          <div><b>Dozens of cores</b><span>No core IDs in the Xenium output: detect them from cell coordinates</span></div>
-          <div><b>Replicate = mouse</b><span>Cores from one mouse are not independent; cells even less so</span></div>
-          <div><b>Slide = model</b><span>Slide and model effects are inseparable, so model comparisons are exploratory</span></div>
+          <div><b>Hundreds of thousands of cells</b><span>Too many for in-memory clustering: sketch 25k cells per slide</span></div>
+          <div><b>Dozens of cores per slide</b><span>No core IDs in the Xenium output: detect them, then match them to the TMA map</span></div>
+          <div><b>Replicate = animal</b><span>Cores from one animal are not independent; cells even less so</span></div>
+          <div><b>Groups on both slides</b><span>Then slide is a batch you can check, not a confounder. The script verifies it.</span></div>
         </div>
       </div>
 
-      <div class="callout warn" style="margin-top:20px;max-width:none"><b>Design limitation</b>In this layout every model sits on its own slide, so model and slide are perfectly confounded. The pipeline shows how to analyse such data responsibly, but its model-vs-model results are <strong>exploratory</strong>. A balanced TMA, with cores from every model on every slide, lets you estimate the slide effect and test the model effect properly.</div>
-
-      <h3 style="margin:36px 0 14px">Six design decisions, and why</h3>
+      <h3 style="margin:36px 0 14px">Eight design decisions, and why</h3>
       <div class="cs-grid">
         <article class="cs-card">
-          <p class="k" style="color:var(--ch-green)">1 · Core detection</p>
-          <h4>DBSCAN, then merge fragments</h4>
-          <p>DBSCAN on cell centroids (<code>eps = 75 µm</code>) finds dense tissue islands. Torn cores come out in pieces, so fragments closer than 400 µm are merged, and clusters under 300 cells (debris) are dropped. A labelled core map PDF lets you check every core by eye.</p>
+          <p class="k" style="color:var(--ch-green)">1 · Find the cores</p>
+          <h4>DBSCAN, merge fragments, drop debris</h4>
+          <p>DBSCAN on cell centroids (<code>eps = 75 µm</code>) finds dense tissue islands. Pieces of a torn core whose centres are closer than 800 µm are merged; groups under 300 cells are debris. A labelled core-map PDF lets you check every core by eye.</p>
         </article>
         <article class="cs-card">
-          <p class="k" style="color:var(--accent)">2 · Replicates</p>
-          <h4>A core_map.csv links core → mouse</h4>
-          <p>The first run writes a template with empty <code>mouse_id</code>s and stops. You fill in the mouse, model and <code>exclude</code> (for folded or empty cores) from the TMA layout sheet. The script refuses to continue while any kept core lacks a mouse ID, so cores can never be counted as separate mice.</p>
+          <p class="k" style="color:var(--accent)">2 · Match to the TMA map</p>
+          <h4>Try all 8 orientations</h4>
+          <p>Slides are often scanned rotated or mirrored relative to the paper map. The script infers the grid from the core centres, tries all 8 rotations and mirror images, and keeps the one where the map's <em>Empty</em> spots fall on missing cores. Cores then carry stable map numbers (P01, P02, …), and a lost core is reported, not silently matched.</p>
         </article>
         <article class="cs-card">
-          <p class="k" style="color:var(--ch-mag)">3 · Confounded design</p>
-          <h4>No method can separate slide from model</h4>
-          <p>Each slide holds one model, so any model difference could equally be a slide (batch) effect. Harmony on slide would erase the model signal, but skipping Harmony does not make it interpretable either, and adding slide as a covariate cannot fix perfect confounding. The script flags this and labels model results <code>_EXPLORATORY</code>. For confirmatory work, place cores from both models on every slide.</p>
+          <p class="k" style="color:var(--ch-mag)">3 · Curated files with safety checks</p>
+          <h4>No statistics until metadata and labels are verified</h4>
+          <p><code>core_map.csv</code> (animal, condition, exclude) is pre-filled from the map and stores each core's centre. If a later run detects cores differently, mismatched IDs are flagged. Composition and DE tests only run once every kept core has an animal ID and the cluster labels are marked reviewed.</p>
         </article>
         <article class="cs-card">
-          <p class="k" style="color:var(--ch-amber)">4 · QC</p>
-          <h4>Thresholds for a targeted panel</h4>
-          <p>≥ 20 transcripts and ≥ 15 genes per cell; control probes + codewords ≤ 5% of counts; cell area between 10 µm² and the 99.5th percentile (which removes merged segmentations); only cells inside a kept core.</p>
+          <p class="k" style="color:var(--ch-amber)">4 · Design check</p>
+          <h4>Is every group on both slides?</h4>
+          <p>The script tabulates condition × slide. With groups spread over slides, slide is an ordinary batch: check the UMAP by slide, and use Harmony only if the same cell types separate by slide. If a group sits on one slide only, the script warns that group and slide effects cannot be separated and the results are exploratory.</p>
         </article>
         <article class="cs-card">
-          <p class="k" style="color:var(--ch-green)">5 · Annotation</p>
-          <h4>Marker modules, checked two ways</h4>
-          <p>Module scores per cluster for curated marker sets give an automatic first label. You confirm it against <code>FindAllMarkers</code>, in Xenium Explorer, and optionally with RCTD on a matched scRNA-seq reference.</p>
+          <p class="k" style="color:var(--ch-green)">5 · QC per slide, explained per core</p>
+          <h4>Know why each core lost cells</h4>
+          <p>≥ 20 transcripts and ≥ 15 genes; controls ≤ 5% of counts; upper count and area cut-offs computed per slide (merged cells). <code>qc_per_core.csv</code> counts each failure reason per core, so a folded core is fixed at the cause, not by loosening the thresholds for everyone.</p>
         </article>
         <article class="cs-card">
-          <p class="k" style="color:var(--accent)">6 · Statistics</p>
-          <h4>Pseudobulk per cell type and mouse</h4>
-          <p>Counts are summed per cell type × mouse and tested with DESeq2 only where each model has ≥ 2 mice (≥ 3 is better). Cell-type proportions are compared per mouse, for example with <code>speckle::propeller</code>. With one model per slide, these results are exploratory.</p>
+          <p class="k" style="color:var(--accent)">6 · Panel-aware annotation</p>
+          <h4>Markers that are actually on the panel</h4>
+          <p>Many textbook markers (Krt14, Krt5, Krt10, Lor, Acta2, Lyz2, Dcn, …) are not on the Xenium Mouse 5K panel. The script reports marker coverage, scores clusters, and calls a cluster <em>Ambiguous</em> when the top two scores are close. Your reviewed labels are tied to a fingerprint of the clustering, so they can never land on different cells after a re-run.</p>
+        </article>
+        <article class="cs-card">
+          <p class="k" style="color:var(--ch-mag)">7 · Niches that stay inside a core</p>
+          <h4>Neighbours from the same core only</h4>
+          <p>Neighbourhood profiles use the 30 nearest cells within 100 µm, from the same core only, then are clustered jointly over all cores so niche labels are comparable. For Banksy, cores are shifted far apart before the neighbour search for the same reason.</p>
+        </article>
+        <article class="cs-card">
+          <p class="k" style="color:var(--ch-amber)">8 · Statistics per animal</p>
+          <h4>Composition test and pseudobulk DE</h4>
+          <p>Cell-type proportions per animal are compared with logit-transformed proportions and limma (the speckle/propeller idea). Pseudobulk sums counts per cell type × animal × condition for DESeq2, with <code>~ mouse_id + condition</code> when the same animal gives both conditions. Unassigned clusters and under-powered cell types are skipped, and the reason is written down.</p>
         </article>
       </div>
 
       <h3 style="margin:36px 0 14px">Key code</h3>
       <div class="cs-code">
-        <div class="code"><span class="lang">R · detect TMA cores</span><button type="button">Copy</button><pre>cl  &lt;- dbscan::dbscan(xy, eps = 75, minPts = 10)$cluster
-cen &lt;- aggregate(xy[cl &gt; 0, ], list(cl = cl[cl &gt; 0]), median)
-grp &lt;- cutree(hclust(dist(cen[, -1]), method = "single"), h = 400)  <span class="c"># merge fragments</span>
-cl[cl &gt; 0] &lt;- grp[match(cl[cl &gt; 0], cen$cl)]
-big &lt;- as.integer(names(which(table(cl[cl &gt; 0]) &gt;= 300)))            <span class="c"># drop debris</span>
-obj$core_id[match(cells, colnames(obj))] &lt;- ifelse(cl %in% big, paste0("C", cl), NA)</pre></div>
-        <div class="code"><span class="lang">R · sketch, cluster, project</span><button type="button">Copy</button><pre>obj[["Xenium"]] &lt;- split(obj[["Xenium"]], f = obj$slide)
-obj &lt;- NormalizeData(obj) |&gt; FindVariableFeatures(nfeatures = 2000)
-obj &lt;- SketchData(obj, ncells = 25000, method = "LeverageScore",
-                  sketched.assay = "sketch")
-DefaultAssay(obj) &lt;- "sketch"
-obj &lt;- FindVariableFeatures(obj) |&gt; ScaleData() |&gt; RunPCA(npcs = 30)
-obj &lt;- FindNeighbors(obj, dims = 1:30) |&gt; FindClusters(resolution = 0.5)
-obj &lt;- RunUMAP(obj, dims = 1:30, return.model = TRUE, reduction.name = "umap")
-obj &lt;- ProjectData(obj, assay = "Xenium", sketched.assay = "sketch",
-                   sketched.reduction = "pca", full.reduction = "pca.full",
-                   dims = 1:30, umap.model = "umap",
-                   refdata = list(cluster_full = "seurat_clusters"))</pre></div>
-        <div class="code"><span class="lang">R · pseudobulk, replicate = mouse</span><button type="button">Copy</button><pre>grp &lt;- paste(md$celltype, md$mouse_id, sep = "||")
-mm  &lt;- sparse.model.matrix(~ 0 + factor(grp))
-pb  &lt;- as.matrix(counts %*% mm)              <span class="c"># genes × (cell type, mouse)</span>
-<span class="c"># per cell type, with ≥ 20 cells per mouse and ≥ 2 mice per model:</span>
-dds &lt;- DESeq2::DESeqDataSetFromMatrix(round(pb[, ii$id]), ii, ~ model)
-dds &lt;- DESeq2::DESeq(dds)
-DESeq2::results(dds, contrast = c("model", "model_2", "model_1"))</pre></div>
+        <div class="code"><span class="lang">R · match detected cores to the TMA map</span><button type="button">Copy</button><pre><span class="c"># lay: tma_layout_TMA1.csv (core_number, block_id, map_row, map_col)</span>
+m &lt;- match_tma_grid(cc$x, cc$y, lay)       <span class="c"># cc: detected core centres</span>
+m$table                                    <span class="c"># 8 orientations and their mismatches</span>
+num &lt;- m$nums[[m$best]]                    <span class="c"># map number of every detected core</span>
+<span class="c"># mismatches = cores on "Empty" spots + map cores not found; 0 = perfect</span></pre></div>
+        <div class="code"><span class="lang">R · safety gate before any statistics</span><button type="button">Copy</button><pre>META_OK &lt;- check_core_map(core_map, cur_cores, move_tol = 150, paired = PAIRED)
+<span class="c"># FALSE if: bad 'exclude' values, a core ID now sits somewhere else,</span>
+<span class="c"># an animal in two conditions in an unpaired design, or missing IDs</span>
+LABELS_REVIEWED &lt;- all(labs$reviewed %in% TRUE)   <span class="c"># curated/cluster_labels.csv</span>
+if (!(META_OK &amp;&amp; LABELS_REVIEWED)) message("STATISTICS SKIPPED ...")</pre></div>
+        <div class="code"><span class="lang">R · statistics with the animal as the unit</span><button type="button">Copy</button><pre>comp &lt;- composition_test(md2, c("control", "treated"), paired = FALSE, min_mice = 2)
+pbde &lt;- pseudobulk_de(counts, md2, c("control", "treated"), paired = FALSE,
+                      min_mice = 2, min_cells = 20)
+pbde$summary     <span class="c"># per cell type: design, animals per group, DE genes</span>
+pbde$skipped     <span class="c"># and why the others were not tested</span></pre></div>
       </div>
 
       <div class="cs-dl">
         <div>
           <h3>Full script <span class="st st-sim">Tested on simulated data</span></h3>
-          <p class="muted">About 400 lines, 13 stages. Switches at the top turn on RCTD, core zooms and Banksy. Set two paths and run. The core-map and confounding checks were tested on simulated data; the full script has not been run on public data.</p>
+          <p class="muted">About 840 lines, 12 stages, every setting at the top. Its helper functions passed 26 tests on a simulated TMA: correct core matching when the slide is printed as is, flipped or rotated; torn cores merged; a lost core reported; all safety checks firing; planted cell-type and gene changes recovered in unpaired and paired designs. The full pipeline has not been run on public data. <a href="https://github.com/githubrudramani/OmicLearningHub/tree/main/scripts/tma_templates" target="_blank" rel="noopener">Example input templates</a>.</p>
         </div>
         <div class="cs-btns">
           <a class="btn" href="https://github.com/githubrudramani/OmicLearningHub/blob/main/scripts/xenium_tma_case_study.R" target="_blank" rel="noopener">View on GitHub</a>
@@ -801,33 +799,35 @@ DESeq2::results(dds, contrast = c("model", "model_2", "model_1"))</pre></div>
         </div>
       </div>
 
-
       <div class="cs-ref">
         <div class="cs-ref-head">
           <div>
             <p class="eyebrow">Optional · RCTD reference</p>
-            <h3>Building a mouse skin reference for RCTD</h3>
+            <h3>A mouse skin reference with the authors' own labels</h3>
           </div>
-          <span class="st st-not">Not yet run</span>
+          <span><span class="st st-sim">Label matching tested on the published files</span> <span class="st st-not">Not yet run end to end</span></span>
         </div>
-        <p class="muted">RCTD labels each Xenium cell by comparing it with a single-cell RNA-seq reference from the same tissue. The companion script builds that reference from one of two public datasets and saves it in the form the case-study script expects.</p>
-        <div class="flav" style="margin-top:0"><table style="min-width:620px">
-          <thead><tr><th></th><th>Joost et al. 2020 · GSE129218 (recommended)</th><th>Tabula Muris Senis · Skin</th></tr></thead>
+        <p class="muted">RCTD labels each Xenium cell by comparing it with a single-cell reference from the same tissue. The companion script builds one from GSE129218 (Joost et al. 2020, full-thickness mouse skin). By default it uses the cell types the <strong>original authors</strong> assigned, downloaded from their public GitHub repository. Label transfer is then independent of your own annotation: if RCTD agrees with your marker-based labels, two separate lines of evidence agree.</p>
+        <div class="flav" style="margin-top:0"><table style="min-width:560px">
+          <thead><tr><th>Broad label</th><th>From the authors' categories</th><th>Cells (author files, before QC)</th></tr></thead>
           <tbody>
-            <tr><td>Tissue</td><td>Full-thickness dorsal skin: epidermis, hair follicle, dermis, immune, vascular</td><td>Skin; check coverage first, since the original Tabula Muris skin was mostly keratinocytes</td></tr>
-            <tr><td>Counts</td><td>10x UMI counts</td><td>Droplet = UMI (use this); FACS = Smart-seq2 reads</td></tr>
-            <tr><td>Labels</td><td>You name clusters from a marker dot plot</td><td>Ready-made <code>cell_ontology_class</code></td></tr>
-            <tr><td>Size, ages</td><td>~5,800 cells; 5 and 9 weeks</td><td>Larger; 1–30 months, so filter to match your mice</td></tr>
+            <tr><td>Basal_Proliferating_KC</td><td>IFE B, IFE C</td><td>1,154</td></tr>
+            <tr><td>Differentiated_KC</td><td>IFE SB1, IFE SB2</td><td>773</td></tr>
+            <tr><td>HairFollicle_KC</td><td>other epidermal + all anagen follicle layers</td><td>2,830</td></tr>
+            <tr><td>Fibroblast</td><td>FIB1–4, dermal sheath, dermal papilla</td><td>385</td></tr>
+            <tr><td>Macrophage_DC</td><td>MC1–3, DC, LC</td><td>182</td></tr>
+            <tr><td>Endothelial · Melanocyte · Skeletal muscle · Sebocyte · T cell</td><td>EC1–2 · MEL1–2 · SM · SG · TC</td><td>123 · 125 · 41 · 28 · 28</td></tr>
+            <tr><td>Lymphatic · Pericyte/SMC · Schwann</td><td>LV · vSM · SC</td><td>22 · 20 · 19</td></tr>
           </tbody>
         </table></div>
-        <div class="callout"><b>Keep labels coarse</b>RCTD drops any cell type with fewer than 25 reference cells. GSE129218 has only ~150–400 fibroblast, immune, vascular and neural-crest cells each, so use one "Immune" or "Vascular" label rather than many subtypes. The script warns you about small or missing types.</div>
-        <div class="code"><span class="lang">R · run order</span><button type="button">Copy</button><pre><span class="c"># 1. build the reference (run twice: once to cluster, once after naming clusters)</span>
-source("scripts/build_skin_rctd_reference.R")     <span class="c"># SOURCE &lt;- "GSE129218" or "TMS"</span>
+        <div class="callout"><b>Small types</b>RCTD drops any type with fewer than 25 reference cells, so lymphatic endothelium, pericytes and Schwann cells (before QC) will be missing. Merge them into a broader label, or accept that RCTD cannot call them. The script warns you. Tested on the published label files, all 6,095 author-labelled cells matched correctly, including the 16 barcodes that occur at both time points.</div>
+        <div class="code"><span class="lang">R · run order</span><button type="button">Copy</button><pre><span class="c"># 1. build the reference (GSE_LABELS &lt;- "authors" is the default)</span>
+source("scripts/build_skin_rctd_reference.R")
 
 <span class="c"># 2. switch RCTD on in the case-study script and re-run it</span>
 RUN_RCTD   &lt;- TRUE
 REF_RDS    &lt;- "~/refs/mouse_skin_GSE129218_rctd_ref.rds"
-REF_CT_COL &lt;- "celltype"</pre></div>
+REF_CT_COL &lt;- "celltype"      <span class="c"># RCTD stays a second opinion: clusters/rctd_by_cluster.csv</span></pre></div>
         <div class="cs-btns">
           <a class="btn" href="https://github.com/githubrudramani/OmicLearningHub/blob/main/scripts/build_skin_rctd_reference.R" target="_blank" rel="noopener">View reference script</a>
           <a class="btn ghost" href="https://raw.githubusercontent.com/githubrudramani/OmicLearningHub/main/scripts/build_skin_rctd_reference.R" target="_blank" rel="noopener">Raw .R file</a>
@@ -835,20 +835,18 @@ REF_CT_COL &lt;- "celltype"</pre></div>
       </div>
 
       <details class="track" style="margin-top:20px">
-        <summary>After the first run: 12-step checklist</summary>
+        <summary>After the first run: 10-step checklist</summary>
         <ol class="cs-next">
-          <li>Open <code>cores/*_core_map.pdf</code>: every core should have exactly one label. Tune <code>eps</code> or the 400 µm merge distance if not.</li>
-          <li>Fill <code>cores/core_map.csv</code> (mouse ID, model, exclude) from the TMA layout sheet, then re-run. The script stops until every kept core has a mouse ID.</li>
-          <li>Check cells kept per slide and core; loosen thresholds rather than lose a whole sample.</li>
-          <li>UMAP by slide: shared cell types should overlap. With one model per slide, the data cannot tell slide from model effects, so report model differences as exploratory.</li>
-          <li>Review automatic labels against cluster markers; rename, merge or re-cluster a lineage.</li>
-          <li>Load the exported CSVs into Xenium Explorer and check that labels sit in the right tissue layers.</li>
-          <li>Optional: RCTD with a matched reference, core zooms with cell outlines, Banksy domains.</li>
-          <li>Name each niche from its cell-type composition and compare niche fractions per mouse.</li>
-          <li>Test composition with one value per mouse (<code>speckle::propeller</code>).</li>
-          <li>Read pseudobulk DE (padj &lt; 0.05); trust only cell types with enough mice per model.</li>
-          <li>Align H&amp;E to the Xenium image in Xenium Explorer.</li>
-          <li>Record thresholds, versions (<code>sessionInfo.txt</code>) and manual label changes.</li>
+          <li><strong>Cores:</strong> open <code>cores/*_core_map.pdf</code> and <code>*_core_map_matched.pdf</code>; compare a few cores with the H&amp;E. The chosen orientation in <code>*_orientations.csv</code> should have 0 mismatches.</li>
+          <li><strong>Metadata:</strong> check <code>curated/core_map.csv</code>; every kept core needs an animal, condition and stratum; set <code>exclude</code> for folded cores. <code>condition_by_slide.csv</code> should show every group on both slides.</li>
+          <li><strong>QC:</strong> read <code>qc/qc_per_core.csv</code>; fix causes before changing thresholds, and keep one rule for all samples.</li>
+          <li><strong>Batch:</strong> UMAP by slide; the same cell types should overlap. Add Harmony only if they don't.</li>
+          <li><strong>Labels:</strong> compare module scores, marker dot plot, markers and spatial plots (plus RCTD); edit <code>curated/cluster_labels.csv</code>, keep doubtful clusters Unassigned/Ambiguous, set <code>reviewed = TRUE</code>, re-run.</li>
+          <li><strong>Explorer:</strong> load <code>explorer/*.csv</code> and check labels on DAPI / H&amp;E.</li>
+          <li><strong>Niches:</strong> name niches from the heatmap; only keep niches that stay stable when you change <code>NICHE_K</code> and <code>N_NICHES</code>.</li>
+          <li><strong>Statistics</strong> then run automatically: composition test, pseudobulk DE, and a file saying which cell types were skipped and why. Aim for ≥ 3 animals per group.</li>
+          <li><strong>Pathways:</strong> use the panel genes as the background, not the whole genome.</li>
+          <li><strong>Methods:</strong> each run folder keeps its settings, session info and the curated files it used.</li>
         </ol>
       </details>
     </div>
