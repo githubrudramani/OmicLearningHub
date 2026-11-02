@@ -219,6 +219,15 @@ dl.gloss dd{margin:0}
 .cs-ref>*{min-width:0}
 .cs-ref-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
 .cs-ref-head h3{font-size:1.15rem;margin-top:6px}
+
+.dn-h{margin:36px 0 14px;font-size:1.35rem}
+.dn-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-bottom:26px}
+.dn-text{max-width:78ch}
+.dn-text{display:grid;gap:8px;min-width:0}
+.dn-text h4{margin:0;font:700 1.05rem/1.3 var(--f-display)}
+.dn-text p,.dn-text li{font-size:.95rem;color:var(--muted)}
+.dn-text ul{margin:0;padding-left:1.1em;display:grid;gap:4px}
+@media (max-width:900px){.dn-grid{grid-template-columns:1fr}}
 .cs-next{margin:0;padding-left:1.3em;display:grid;gap:6px;font-size:.95rem}
 @media (max-width:900px){.cs-layout{grid-template-columns:1fr}.cs-grid{grid-template-columns:1fr 1fr}}
 @media (max-width:560px){.cs-grid,.cs-points{grid-template-columns:1fr}}
@@ -263,6 +272,7 @@ html{scroll-behavior:smooth}
       <a href="#platforms">Platforms</a>
       <a href="#pipeline">Xenium pipeline</a>
       <a href="#case-study">Case study</a>
+      <a href="#downstream">Downstream</a>
       <a href="#trends">What's new</a>
       <a href="#resources">Resources</a>
     </nav>
@@ -849,6 +859,169 @@ REF_CT_COL &lt;- "celltype"      <span class="c"># RCTD stays a second opinion: 
           <li><strong>Methods:</strong> each run folder keeps its settings, session info and the curated files it used.</li>
         </ol>
       </details>
+    </div>
+  </section>
+
+  <!-- DOWNSTREAM -->
+  <section id="downstream">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Part 3c · After the case study</p>
+        <h2>Downstream analyses: composition, space and genes</h2>
+        <p class="muted" style="max-width:76ch">Once cores are matched, animals assigned and labels reviewed, three kinds of question remain. Which cell types change? How is the tissue organised? Which genes and pathways respond? The rule is the same throughout: <strong>the animal is the replicate, never the cell or the core</strong>. Every test below uses one value per animal (or per animal and condition). The code reads the object saved by the case-study script; the column names are those in <code>core_map.csv</code>.</p>
+      </div>
+
+      <h3 class="dn-h">A · Cell composition statistics</h3>
+      <div class="dn-grid">
+        <div class="dn-text">
+          <h4>A1 · Treatment effect over time, adjusted for slide</h4>
+          <p>Count each cell type per animal, turn counts into proportions, and logit-transform them so a linear model fits (the speckle/propeller idea). With different animals per group, the model asks three questions:</p>
+          <ul>
+            <li><strong>Overall:</strong> is a cell type changed by treatment, after allowing for slide and time point?</li>
+            <li><strong>Per time point:</strong> treated vs control at each time.</li>
+            <li><strong>Over time:</strong> does the treatment effect itself change? This is the time × treatment interaction.</li>
+          </ul>
+        </div>
+        <div class="code"><span class="lang">R · A1</span><button type="button">Copy</button><pre>library(limma)
+<span class="c"># one sample per animal (x condition): logit cell-type proportions + sample table</span>
+per_animal &lt;- function(m) {
+  m$sample &lt;- paste(m$mouse_id, m$condition, sep = "|")
+  cnt  &lt;- as.matrix(as.data.frame.matrix(table(m$sample, m$celltype)))
+  samp &lt;- m[!duplicated(m$sample), c("sample", "mouse_id", "condition", "stratum", "slide")]
+  list(y = t(qlogis((cnt + 0.5) / rowSums(cnt + 0.5))),
+       samp = samp[match(rownames(cnt), samp$sample), ])
+}
+a &lt;- per_animal(md[md$condition %in% c("control", "treated"), ])
+a$samp$condition &lt;- factor(a$samp$condition, levels = c("control", "treated"))
+
+<span class="c"># overall effect, adjusted for slide and time</span>
+d1 &lt;- model.matrix(~ slide + stratum + condition, a$samp)
+topTable(eBayes(lmFit(a$y, d1), robust = TRUE), coef = "conditiontreated")
+
+<span class="c"># does the effect change over time? (interaction, F-test)</span>
+d2 &lt;- model.matrix(~ slide + stratum * condition, a$samp)
+topTable(eBayes(lmFit(a$y, d2), robust = TRUE), coef = grep(":", colnames(d2)))</pre></div>
+      </div>
+      <div class="dn-grid">
+        <div class="dn-text">
+          <h4>A2 · Progression within the same animal (paired)</h4>
+          <p>When one animal provides an early and an advanced lesion, compare each animal with itself. Adding the animal to the model removes the large differences between animals, so smaller shifts become visible. Only animals with both stages are used. To pool stages first (e.g. two advanced stages), relabel them before counting.</p>
+        </div>
+        <div class="code"><span class="lang">R · A2</span><button type="button">Copy</button><pre>p &lt;- per_animal(md[md$condition %in% c("early_lesion", "advanced_lesion"), ])
+both &lt;- names(which(table(p$samp$mouse_id) == 2))            <span class="c"># complete pairs only</span>
+keep &lt;- p$samp$mouse_id %in% both
+ps &lt;- droplevels(p$samp[keep, ])
+ps$condition &lt;- factor(ps$condition, levels = c("early_lesion", "advanced_lesion"))
+
+d &lt;- model.matrix(~ mouse_id + condition, ps)                <span class="c"># animal as a block</span>
+fit &lt;- eBayes(lmFit(p$y[, keep], d), robust = TRUE)
+topTable(fit, coef = "conditionadvanced_lesion")</pre></div>
+      </div>
+      <div class="callout warn" style="max-width:none"><b>Proportions add up to 100%</b>If one cell type expands, every other type's share falls, even when its cell numbers don't change. In our test, rising T cells made fibroblasts look like they fell over time. Read a drop in a large population next to the rise that caused it, and confirm key results with a ratio (e.g. T cells per epithelial cell) or cells per mm² of tissue.</div>
+
+      <h3 class="dn-h">B · Spatial analysis: neighbourhoods and niches</h3>
+      <div class="dn-grid">
+        <div class="dn-text">
+          <h4>B1 · Who sits next to whom</h4>
+          <p>For each core, count each cell type's neighbours (here the 10 nearest cells), then shuffle the cell-type labels within the core many times. The z-score says whether type B sits next to type A more (z &gt; 0) or less (z &lt; 0) often than chance. Average per animal, then compare groups. This is how you test, for example, whether T cells move into contact with the epithelium.</p>
+        </div>
+        <div class="code"><span class="lang">R · B1</span><button type="button">Copy</button><pre>z_core &lt;- function(xy, ct, k = 10, nperm = 200) {
+  ct &lt;- factor(ct); nn &lt;- dbscan::kNN(xy, k = k)$id
+  tab &lt;- function(l) as.matrix(table(factor(rep(l, k), levels(ct)),
+                                     factor(l[as.vector(nn)], levels(ct))))
+  obs &lt;- tab(ct); perm &lt;- replicate(nperm, tab(sample(ct)))   <span class="c"># shuffle within the core</span>
+  (obs - apply(perm, 1:2, mean)) / apply(perm, 1:2, sd)
+}
+d &lt;- md[md$sample_id == "TMA1_P01", ]
+z &lt;- z_core(as.matrix(d[, c("x_centroid", "y_centroid")]), d$celltype)
+z["T_cell", "Basal_KC"]          <span class="c"># &gt; 2: T cells contact basal cells more than by chance</span></pre></div>
+      </div>
+      <div class="dn-grid">
+        <div class="dn-text">
+          <h4>B2 · Immune infiltration and the epithelium–stroma interface</h4>
+          <p>Measure distances, not just counts. For every immune cell, take the distance to the nearest epithelial (or tumour) cell. Infiltration is the fraction of immune cells within, say, 30 µm. The <strong>interface</strong> is the band of cells within 30 µm of both epithelium and stroma, which is where tumour–stroma contact happens. Summarise per animal and test with the same design as A1.</p>
+        </div>
+        <div class="code"><span class="lang">R · B2</span><button type="button">Copy</button><pre>xy  &lt;- as.matrix(d[, c("x_centroid", "y_centroid")])
+epi &lt;- d$celltype %in% c("Basal_KC", "Differentiated_KC")
+str &lt;- d$celltype %in% c("Fibroblast", "Endothelial")
+imm &lt;- d$celltype %in% c("T_cell", "Macrophage")
+
+d_epi &lt;- dbscan::kNN(xy[epi, ], k = 1, query = xy)$dist[, 1]   <span class="c"># to nearest epithelial cell</span>
+d_str &lt;- dbscan::kNN(xy[str, ], k = 1, query = xy)$dist[, 1]
+mean(d_epi[imm] &lt;= 30)                         <span class="c"># immune infiltration</span>
+interface &lt;- d_epi &lt;= 30 &amp; d_str &lt;= 30         <span class="c"># epithelium–stroma interface</span>
+mean(imm[interface])                           <span class="c"># immune share at the interface</span>
+<span class="c"># repeat per core, average per animal, then lm(metric ~ slide + stratum + condition)</span></pre></div>
+      </div>
+      <div class="dn-grid">
+        <div class="dn-text">
+          <h4>B3 · Tissue layering: epidermis to dermis</h4>
+          <p>Use the basal layer as a ruler. Bin every other cell by its distance from the nearest basal cell (0–25, 25–50, 50–100 µm, …) and plot the cell-type mix per bin. In normal skin the profile runs from differentiated keratinocytes above, through the basal layer, into fibroblast-rich dermis. A flattened profile is a quantitative sign of disorganisation. For data-driven tissue domains, use the niches or Banksy from the case-study script.</p>
+        </div>
+        <div class="code"><span class="lang">R · B3</span><button type="button">Copy</button><pre>bas &lt;- d$celltype == "Basal_KC"
+d$d_basal &lt;- dbscan::kNN(xy[bas, ], k = 1, query = xy)$dist[, 1]
+d$bin &lt;- cut(d$d_basal, c(0, 25, 50, 100, 200, Inf), include.lowest = TRUE)
+prop.table(table(d$bin[!bas], d$celltype[!bas]), 1) |&gt; round(2)</pre></div>
+      </div>
+
+      <h3 class="dn-h">C · Gene-level changes</h3>
+      <div class="dn-grid">
+        <div class="dn-text">
+          <h4>C1 · Pseudobulk DE per cell type</h4>
+          <p>Sum the raw counts of each cell type per animal (and condition), then run DESeq2 with the same designs as A: <code>~ slide + stratum + condition</code> for treatment, <code>~ mouse_id + condition</code> for paired progression. Cell types with too few animals, or fewer than 20 cells per animal, are skipped with the reason recorded.</p>
+        </div>
+        <div class="code"><span class="lang">R · C1</span><button type="button">Copy</button><pre>counts &lt;- LayerData(obj, "counts", assay = "Xenium")
+kc &lt;- md[md$celltype == "Basal_KC" &amp; md$condition %in% c("control", "treated"), ]
+f  &lt;- factor(paste(kc$mouse_id, kc$condition, sep = "|"))     <span class="c"># same sample ids as A1</span>
+pb &lt;- as.matrix(counts[, rownames(kc)] %*% Matrix::sparse.model.matrix(~ 0 + f))
+colnames(pb) &lt;- levels(f)                                    <span class="c"># genes x animals</span>
+info &lt;- a$samp[match(colnames(pb), a$samp$sample), ]; rownames(info) &lt;- info$sample
+
+dds &lt;- DESeq2::DESeqDataSetFromMatrix(pb, info, ~ slide + stratum + condition)
+dds &lt;- DESeq2::DESeq(dds)
+res &lt;- DESeq2::results(dds, contrast = c("condition", "treated", "control"))</pre></div>
+      </div>
+      <div class="dn-grid">
+        <div class="dn-text">
+          <h4>C2 · Pathways: p53, DNA repair, inflammation</h4>
+          <p>Rank the tested genes by the DESeq2 statistic and run GSEA on MSigDB Hallmark sets: <code>P53_PATHWAY</code>, <code>DNA_REPAIR</code>, <code>UV_RESPONSE_UP</code>, <code>INFLAMMATORY_RESPONSE</code>, <code>TNFA_SIGNALING_VIA_NFKB</code>, <code>G2M_CHECKPOINT</code>. Cut each set to the genes on your panel first: a 5K panel holds only part of each set, and the background must be the panel, not the genome. A per-cell pathway score, averaged per animal, makes the result easy to plot.</p>
+        </div>
+        <div class="code"><span class="lang">R · C2</span><button type="button">Copy</button><pre>h &lt;- msigdbr::msigdbr(species = "Mus musculus", collection = "H")
+sets &lt;- split(h$gene_symbol, h$gs_name)[c("HALLMARK_P53_PATHWAY", "HALLMARK_DNA_REPAIR",
+                                          "HALLMARK_INFLAMMATORY_RESPONSE")]
+st &lt;- sort(setNames(res$stat, rownames(res))[!is.na(res$stat)], decreasing = TRUE)
+sets &lt;- lapply(sets, intersect, names(st))                  <span class="c"># panel genes only</span>
+fgsea::fgsea(sets[lengths(sets) &gt;= 5], st, minSize = 5)     <span class="c"># NES &gt; 0: up in treated</span>
+
+<span class="c"># per-cell score = mean z-score of the set's panel genes; then average per animal</span>
+g  &lt;- intersect(sets$HALLMARK_P53_PATHWAY, rownames(obj))
+x  &lt;- as.matrix(LayerData(obj, "data", assay = "Xenium")[g, ])
+md$p53_score &lt;- colMeans((x - rowMeans(x)) / apply(x, 1, sd))</pre></div>
+      </div>
+
+      <h3 class="dn-h">What the test run showed</h3>
+      <p class="muted" style="max-width:80ch;margin-bottom:12px">The full script ran end to end on a simulated TMA (23 animals, 46 cores, 20,700 cells, two slides) with effects planted in advance:</p>
+      <div class="flav" style="margin-top:0"><table style="min-width:640px">
+        <thead><tr><th>Planted</th><th>Analysis</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td>T cells rise with treatment, more at later times</td><td>A1</td><td>Overall adj. P = 0.0007; per time: none at week 4, growing to week 16 (adj. P = 1e-15); interaction adj. P = 5e-13</td></tr>
+          <tr><td>Extra fibroblasts on one slide (batch)</td><td>A1</td><td>Absorbed by the slide term: no overall fibroblast effect</td></tr>
+          <tr><td>Macrophages up in advanced lesions, large animal differences</td><td>A2 (paired)</td><td>adj. P = 1.5e-6</td></tr>
+          <tr><td>Treated immune cells infiltrate the epithelium</td><td>B1, B2</td><td>T cell–basal z: −9 control vs +16 treated; immune cells about 100 µm closer to the epithelium</td></tr>
+          <tr><td>p53-like genes up in treated basal cells; fibroblast genes up with progression</td><td>C1, C2</td><td>12/12 and 11/12 planted genes ranked top; no false DE in other cell types; planted set NES 1.7, adj. P 1e-18</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="cs-dl" style="margin-top:20px">
+        <div>
+          <h3>Full downstream script <span class="st st-sim">Tested on simulated data</span></h3>
+          <p class="muted">About 360 lines with all the settings (column names, groups, time order, cell-type groups, distances) at the top. It writes every table and plot to one folder. The pathway step needs internet once to download MSigDB.</p>
+        </div>
+        <div class="cs-btns">
+          <a class="btn" href="https://github.com/githubrudramani/OmicLearningHub/blob/main/scripts/xenium_tma_downstream.R" target="_blank" rel="noopener">View on GitHub</a>
+          <a class="btn ghost" href="https://raw.githubusercontent.com/githubrudramani/OmicLearningHub/main/scripts/xenium_tma_downstream.R" target="_blank" rel="noopener">Raw .R file</a>
+        </div>
+      </div>
     </div>
   </section>
 
