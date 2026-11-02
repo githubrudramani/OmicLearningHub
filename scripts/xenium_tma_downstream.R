@@ -62,7 +62,7 @@ MIN_ANIMALS <- 2; MIN_CELLS_PB <- 20
 per_animal_counts <- function(md, var) {
   md$.s <- paste(md[[COL_ANIMAL]], md[[COL_GROUP]], sep = "|")
   cnt <- as.matrix(as.data.frame.matrix(table(md$.s, md[[var]])))
-  mode1 <- function(x) names(sort(table(x), decreasing = TRUE))[1]
+  mode1 <- function(x) { x <- x[!is.na(x)]; if (!length(x)) NA_character_ else names(sort(table(x), decreasing = TRUE))[1] }
   samp <- md %>% group_by(.s) %>%
     summarise(animal = first(.data[[COL_ANIMAL]]), group = first(.data[[COL_GROUP]]),
               time = mode1(.data[[COL_TIME]]), slide = mode1(.data[[COL_SLIDE]]),
@@ -88,7 +88,7 @@ mean_props <- function(cnt, by) {
 # and whether it changes over time (interaction).
 composition_treatment <- function(cnt, samp) {
   samp$group <- factor(samp$group, levels = c(TRT_REF, TRT_TEST))
-  samp$time  <- factor(samp$time, levels = if (is.null(TIME_LEVELS)) unique(samp$time) else TIME_LEVELS)
+  samp$time  <- droplevels(factor(samp$time, levels = if (is.null(TIME_LEVELS)) unique(samp$time) else TIME_LEVELS))
   samp$slide <- factor(samp$slide)
   print(table(time = samp$time, group = samp$group))          # animals per cell of the design
   adj <- if (nlevels(samp$slide) > 1) "slide + " else ""
