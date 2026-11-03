@@ -24,3 +24,5 @@ Cite as: githubrudramani (2026). *OmicLearningHub: hands-on bioinformatics tutor
 ## How the site is built
 
 Plain HTML, CSS and JavaScript with no build step. Every push to `main` is published by `.github/workflows/pages.yml`. The bulk RNA-seq module is re-run end to end by `.github/workflows/rnaseq-example.yml` whenever its code changes; results are pushed to the [`rnaseq-run`](https://github.com/githubrudramani/OmicLearningHub/tree/rnaseq-run) branch.
+
+**Ask button.** Every page has an *Ask* button. It searches all pages instantly (keyword search over `assets/ask/index.json`, rebuilt by `tools/build_ask_index.py` on each deploy). Visitors can then click *Generate answer*: a small open model (Qwen2.5 1.5B or 0.5B, via [WebLLM](https://github.com/mlc-ai/web-llm)) runs on their own GPU with WebGPU, writes a short answer from the matched sections only and cites them. No server and no API key are involved, and questions never leave the browser. The model (~0.4–1 GB) downloads on first use and is then cached. Browsers without WebGPU get the search results only.
